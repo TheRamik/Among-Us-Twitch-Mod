@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using Serilog;
 using TwitchLib.Api;
 using TwitchLib.Api.Core.Enums;
@@ -18,9 +19,47 @@ using TwitchLib.PubSub.Events;
 using TwitchLib.PubSub.Interfaces;
 using TwitchLib.PubSub.Models;
 
+/*
+void LoadJson()
+{
+    using (StreamReader r = new StreamReader("Settings.json"))
+    {
+        string json = r.ReadToEnd();
+        Console.WriteLine(json);
+        // List<Item> items = JsonConvert.DeserializeObject<List<Item>>(json);
+    }
+}
+*/
 
 namespace ExampleTwitchPubsub
 {
+    public struct Settings
+    {
+        public Twitch twitch;
+    }
+
+    public struct Twitch
+    {
+        public string channelName;
+        public string channelId;
+        public SettingAPI api;
+        public PubSub pubsub;
+        public List<string> rewards;
+
+    }
+
+    public struct SettingAPI
+    {
+        public string clientId;
+        public string secret;
+    }
+
+    public struct PubSub
+    {
+        public string oauth;
+        public string refresh;
+    }
+
     public struct UserData
     {
         public UserData(string channelId, string clientId, string secret, string accessToken)
@@ -38,6 +77,16 @@ namespace ExampleTwitchPubsub
 
     }
 
+    class CustomRewardBody
+    {
+        public string title { get; set; }
+        public string prompt { get; set; }
+        public int cost { get; set; }
+        public bool is_enabled { get; set; }
+        public bool is_global_countdown_enabled { get; set; }
+        public int global_countdown_seconds { get; set; }
+    }
+
     /// <summary>
     /// Represents the example bot
     /// </summary>
@@ -47,6 +96,8 @@ namespace ExampleTwitchPubsub
         private static ILogger _logger;
         /// <summary>Settings</summary>
         public static IConfiguration Settings;
+
+        public static Settings mySettings;
         /// <summary>Twitchlib Pubsub</summary>
         public static ITwitchPubSub PubSub;
 
@@ -73,7 +124,15 @@ namespace ExampleTwitchPubsub
                 .AddJsonFile("Settings.json", false, true)
                 .AddEnvironmentVariables()
                 .Build();
+
+            using (StreamReader r = new StreamReader("Settings.json"))
+            {
+                string json = r.ReadToEnd();
+                Console.WriteLine(json);
+                mySettings = JsonConvert.DeserializeObject<Settings>(json);
+            }
             
+
             //run in async
             new Program()
                 .MainAsync(args)
@@ -88,16 +147,19 @@ namespace ExampleTwitchPubsub
         /// <returns>the Task</returns>
         private async Task MainAsync(string[] args)
         {
-            var channelId = Settings.GetSection("twitch").GetValue<string>("channelId");
-            var clientId = Settings.GetSection("twitch.api").GetValue<string>("client-id");
-            var secret = Settings.GetSection("twitch.api").GetValue<string>("secret");
-            var accessToken = Settings.GetSection("twitch.pubsub").GetValue<string>("oauth");
+            // var channelId = Settings.GetSection("twitch").GetValue<string>("channelId");
+            var channelId = mySettings.twitch.channelId; //"79351610";
+            var clientId = mySettings.twitch.api.clientId;//"68nrjzl7gsxwkxhjf0bbyva2go57ty";// Settings.GetSection("twitch.api").GetValue<string>("client-id");
+            var secret = mySettings.twitch.api.secret; // Settings.GetSection("twitch.api").GetValue<string>("secret");
+            var accessToken = mySettings.twitch.pubsub.oauth; // Settings.GetSection("twitch.pubsub").GetValue<string>("oauth");
             client = new HttpClient();
             var userData = new UserData(channelId, clientId, secret, accessToken);
+
             Console.WriteLine("channelId: " + userData.ChannelId);
-            Console.WriteLine("clientId " + userData.ClientId);
+            Console.WriteLine("clientId: " + userData.ClientId);
             Console.WriteLine("secret: " + userData.Secret);
             Console.WriteLine("accessToken: " + userData.UserAccessToken);
+
             //set up twitchlib api
             API = new TwitchAPI();
             API.Settings.ClientId = clientId;
@@ -110,41 +172,71 @@ namespace ExampleTwitchPubsub
             PubSub.OnPubSubServiceClosed += OnPubSubServiceClosed;
             PubSub.OnPubSubServiceError += OnPubSubServiceError;
 
-            updateCustomReward(client, userData, "e302729f-fcdc-4836-897f-54a57550bc83", "test test 123");
 
             //Set up listeners
-            ListenToBits(channelId);
-            ListenToChatModeratorActions(channelId, channelId);
-            ListenToFollows(channelId);
-            ListenToLeaderboards(channelId);
-            ListenToPredictions(channelId);
-            ListenToRaid(channelId);
             ListenToRewards(channelId);
-            ListenToSubscriptions(channelId);
-            ListenToVideoPlayback(channelId);
-            ListenToWhispers(channelId);
 
             //Connect to pubsub
             PubSub.Connect();
+
+            // createCustomReward
+            CustomRewardBody testReward = new CustomRewardBody();
+            testReward.title = "rickelz test";
+            testReward.cost = 10000;
+
+            createCustomReward(client, userData, testReward);
+
+            // updateCustomReward
+            updateCustomReward(client, userData, "e302729f-fcdc-4836-897f-54a57550bc83", "test test 1234");
 
             //Keep the program going
             await Task.Delay(Timeout.Infinite);
         }
 
-        private void createCustomReward(string channelId, string clientId, string rewardId, string secret, string prompt)
+        /// <summary>
+        /// Refreshes the token when the user access token expires. Updates the
+        /// access token and the settings.json.
+        /// </summary>
+        private void refreshAccessToken(HttpClient client, UserData userData)
         {
 
         }
 
+
+        /// <summary>
+        /// Creates the custom reward if it does not exist already. Appends the
+        /// rewards's id to settings.json. See https://dev.twitch.tv/docs/api/reference#create-custom-rewards
+        /// for more info.
+        /// </summary>
+        private async void createCustomReward(HttpClient client, UserData userData, CustomRewardBody rewardBody)
+        {
+            Console.WriteLine("Inside of createCustomReward");
+            using (var request = new HttpRequestMessage(new HttpMethod("POST"), "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + userData.ChannelId))
+            {
+                request.Headers.TryAddWithoutValidation("Authorization", "Bearer " + userData.UserAccessToken);
+                request.Headers.TryAddWithoutValidation("client-id", userData.ClientId);
+
+                request.Content = new StringContent(JsonConvert.SerializeObject(rewardBody));
+                request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
+                Console.WriteLine(request.ToString());
+                var response = await client.SendAsync(request);
+                Console.WriteLine(response.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Updates the custom reward created on the channel.
+        /// See https://dev.twitch.tv/docs/api/reference#update-custom-reward for more info.
+        /// </summary>
         private async void updateCustomReward(HttpClient client, UserData userData, string rewardId, string prompt)
         {
             Console.WriteLine("Inside of updateCustomReward");
-            using (var request = new HttpRequestMessage(new HttpMethod("PATCH"), "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + userData.ChannelId))
+            using (var request = new HttpRequestMessage(new HttpMethod("PATCH"), "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + userData.ChannelId + "&id=" + rewardId))
             {
                 request.Headers.TryAddWithoutValidation("Authorization", "Bearer " + userData.UserAccessToken);
-                request.Headers.TryAddWithoutValidation("Client-Id", userData.ClientId);
+                request.Headers.TryAddWithoutValidation("client-id", userData.ClientId);
 
-                request.Content = new StringContent("{\"prompt\":" + prompt + "}");
+                request.Content = new StringContent("{\"prompt\":\"" + prompt + "\"}");
                 request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
                 Console.WriteLine(request.ToString());
                 var response = await client.SendAsync(request);
@@ -174,15 +266,9 @@ namespace ExampleTwitchPubsub
             PubSub.OnStreamUp += PubSub_OnStreamUp;
             PubSub.OnStreamDown += PubSub_OnStreamDown;
             PubSub.OnViewCount += PubSub_OnViewCount;
-            PubSub.OnCommercial += PubSub_OnCommercial;
             PubSub.ListenToVideoPlayback(channelId);
         }
 
-        [Obsolete]
-        private void PubSub_OnCommercial(object sender, OnCommercialArgs e)
-        {
-            // _logger.Information($"A commercial has started for {e.Length} seconds");
-        }
 
         private void PubSub_OnViewCount(object sender, OnViewCountArgs e)
         {
@@ -282,212 +368,6 @@ namespace ExampleTwitchPubsub
 
         #endregion
 
-        #region Outgoing Raid Events
-
-        private void ListenToRaid(string channelId)
-        {
-            PubSub.OnRaidUpdate += PubSub_OnRaidUpdate;
-            PubSub.OnRaidUpdateV2 += PubSub_OnRaidUpdateV2;
-            PubSub.OnRaidGo += PubSub_OnRaidGo;
-            PubSub.ListenToRaid(channelId);
-        }
-
-        private void PubSub_OnRaidGo(object sender, OnRaidGoArgs e)
-        {
-            // _logger.Information($"Execute raid for {e.TargetDisplayName}");
-        }
-
-        private void PubSub_OnRaidUpdateV2(object sender, OnRaidUpdateV2Args e)
-        {
-            // _logger.Information($"Started raid to {e.TargetDisplayName} with {e.ViewerCount} viewers");
-        }
-
-        private void PubSub_OnRaidUpdate(object sender, OnRaidUpdateArgs e)
-        {
-            // _logger.Information($"Started Raid to {e.TargetChannelId} with {e.ViewerCount} viewers will start in {e.RemainingDurationSeconds} seconds");
-        }
-
-        #endregion
-
-        #region Prediction Events
-
-        private void ListenToPredictions(string channelId)
-        {
-            PubSub.OnPrediction += PubSub_OnPrediction;
-            PubSub.ListenToPredictions(channelId);
-        }
-
-        private void PubSub_OnPrediction(object sender, OnPredictionArgs e)
-        {
-            //if (e.Type == PredictionType.EventCreated)
-            {
-                // _logger.Information($"A new prediction has started: {e.Title}");
-            }
-
-            //if (e.Type == PredictionType.EventUpdated)
-            {
-                if (e.Status == PredictionStatus.Active)
-                {
-                    var winningOutcome = e.Outcomes.First(x => e.WinningOutcomeId.Equals(x.Id));
-                    // _logger.Information($"Prediction: {e.Status}, {e.Title} => winning: {winningOutcome.Title}({winningOutcome.TotalPoints} points by {winningOutcome.TotalUsers} users)");
-                }
-
-                if (e.Status == PredictionStatus.Resolved)
-                {
-                    var winningOutcome = e.Outcomes.First(x => e.WinningOutcomeId.Equals(x.Id));
-                    // _logger.Information($"Prediction: {e.Status}, {e.Title} => Won: {winningOutcome.Title}({winningOutcome.TotalPoints} points by {winningOutcome.TotalUsers} users)");
-                }
-            }
-        }
-
-        #endregion
-
-        #region Leaderboard Events
-
-        private void ListenToLeaderboards(string channelId)
-        {
-            PubSub.OnLeaderboardBits += PubSub_OnLeaderboardBits;
-            PubSub.OnLeaderboardSubs += PubSub_OnLeaderboardSubs;
-            PubSub.ListenToLeaderboards(channelId);
-        }
-
-        private void PubSub_OnLeaderboardSubs(object sender, OnLeaderboardEventArgs e)
-        {
-            // _logger.Information($"Gifted Subs leader board");
-            foreach (LeaderBoard leaderBoard in e.TopList)
-            {
-                // _logger.Information($"{leaderBoard.Place}) {leaderBoard.UserId} ({leaderBoard.Score})");
-            }
-        }
-
-        private void PubSub_OnLeaderboardBits(object sender, OnLeaderboardEventArgs e)
-        {
-            _logger.Information($"Bits leader board");
-            foreach (LeaderBoard leaderBoard in e.TopList)
-            {
-                _logger.Information($"{leaderBoard.Place}) {leaderBoard.UserId} ({leaderBoard.Score})");
-            }
-        }
-
-        #endregion
-
-        #region Follow Events
-
-        private void ListenToFollows(string channelId)
-        {
-            PubSub.OnFollow += PubSub_OnFollow;
-            PubSub.ListenToFollows(channelId);
-        }
-
-        private void PubSub_OnFollow(object sender, OnFollowArgs e)
-        {
-            _logger.Information($"{e.Username} is now following");
-        }
-
-        #endregion
-
-        #region Moderator Events
-
-        private void ListenToChatModeratorActions(string myTwitchId, string channelId)
-        {
-            PubSub.OnTimeout += PubSub_OnTimeout;
-            PubSub.OnBan += PubSub_OnBan;
-            PubSub.OnMessageDeleted += PubSub_OnMessageDeleted;
-            PubSub.OnUnban += PubSub_OnUnban;
-            PubSub.OnUntimeout += PubSub_OnUntimeout;
-            PubSub.OnHost += PubSub_OnHost;
-            PubSub.OnSubscribersOnly += PubSub_OnSubscribersOnly;
-            PubSub.OnSubscribersOnlyOff += PubSub_OnSubscribersOnlyOff;
-            PubSub.OnClear += PubSub_OnClear;
-            PubSub.OnEmoteOnly += PubSub_OnEmoteOnly;
-            PubSub.OnEmoteOnlyOff += PubSub_OnEmoteOnlyOff;
-            PubSub.OnR9kBeta += PubSub_OnR9kBeta;
-            PubSub.OnR9kBetaOff += PubSub_OnR9kBetaOff;
-            PubSub.ListenToChatModeratorActions(myTwitchId, channelId);
-        }
-
-        private void PubSub_OnR9kBetaOff(object sender, OnR9kBetaOffArgs e)
-        {
-            _logger.Information($"{e.Moderator} disabled R9K mode");
-        }
-
-        private void PubSub_OnR9kBeta(object sender, OnR9kBetaArgs e)
-        {
-            _logger.Information($"{e.Moderator} enabled R9K mode");
-        }
-
-        private void PubSub_OnEmoteOnlyOff(object sender, OnEmoteOnlyOffArgs e)
-        {
-            _logger.Information($"{e.Moderator} disabled emote only mode");
-        }
-
-        private void PubSub_OnEmoteOnly(object sender, OnEmoteOnlyArgs e)
-        {
-            _logger.Information($"{e.Moderator} enabled emote only mode");
-        }
-
-        private void PubSub_OnClear(object sender, OnClearArgs e)
-        {
-            _logger.Information($"{e.Moderator} cleared the chat");
-        }
-
-        private void PubSub_OnSubscribersOnlyOff(object sender, OnSubscribersOnlyOffArgs e)
-        {
-            _logger.Information($"{e.Moderator} disabled subscriber only mode");
-        }
-
-        private void PubSub_OnSubscribersOnly(object sender, OnSubscribersOnlyArgs e)
-        {
-            _logger.Information($"{e.Moderator} enabled subscriber only mode");
-        }
-
-        private void PubSub_OnHost(object sender, OnHostArgs e)
-        {
-            _logger.Information($"{e.Moderator} started host to {e.HostedChannel}");
-        }
-
-        private void PubSub_OnUntimeout(object sender, OnUntimeoutArgs e)
-        {
-            _logger.Information($"{e.UntimeoutedUser} undid the timeout of {e.UntimeoutedUser}");
-        }
-
-        private void PubSub_OnUnban(object sender, OnUnbanArgs e)
-        {
-            _logger.Information($"{e.UnbannedBy} unbanned {e.UnbannedUser}");
-        }
-
-        private void PubSub_OnMessageDeleted(object sender, OnMessageDeletedArgs e)
-        {
-            _logger.Information($"{e.DeletedBy} deleted the message \"{e.Message}\" from {e.TargetUser}");
-        }
-
-        private void PubSub_OnBan(object sender, OnBanArgs e)
-        {
-            _logger.Information($"{e.BannedBy} banned {e.BannedUser} ({e.BanReason})");
-        }
-
-        private void PubSub_OnTimeout(object sender, OnTimeoutArgs e)
-        {
-            _logger.Information($"{e.TimedoutBy} timed out {e.TimedoutUser} ({e.TimeoutReason}) for {e.TimeoutDuration.Seconds} seconds");
-        }
-
-        #endregion
-
-        #region Bits Events
-
-        private void ListenToBits(string channelId)
-        {
-            PubSub.OnBitsReceived += PubSub_OnBitsReceived;
-            PubSub.ListenToBitsEvents(channelId);
-        }
-
-        private void PubSub_OnBitsReceived(object sender, OnBitsReceivedArgs e)
-        {
-            _logger.Information($"{e.Username} trowed {e.TotalBitsUsed} bits");
-        }
-
-        #endregion
-
         #region Pubsub events
 
         private void OnPubSubServiceError(object sender, OnPubSubServiceErrorArgs e)
@@ -503,7 +383,7 @@ namespace ExampleTwitchPubsub
         private void OnPubSubServiceConnected(object sender, EventArgs e)
         {
             _logger.Information($"Connected to pubsub server");
-            var oauth = Settings.GetSection("twitch.pubsub").GetValue<string>("oauth");
+            var oauth = mySettings.twitch.pubsub.oauth;// Settings.GetSection("twitch.pubsub").GetValue<string>("oauth");
             PubSub.SendTopics(oauth);
         }
 

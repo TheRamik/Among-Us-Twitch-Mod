@@ -243,6 +243,9 @@
     <Reference Include="Serilog.Sinks.PeriodicBatching">
       <HintPath>packages\Serilog.Sinks.PeriodicBatching.2.3.0\lib\net45\Serilog.Sinks.PeriodicBatching.dll</HintPath>
     </Reference>
+    <Reference Include="Serilog.Sinks.Seq">
+      <HintPath>packages\Serilog.Sinks.Seq.5.0.0\lib\net45\Serilog.Sinks.Seq.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
