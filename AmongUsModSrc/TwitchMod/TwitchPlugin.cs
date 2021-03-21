@@ -156,7 +156,7 @@ namespace TestMod
                 //__instance.RpcSetColor(12);
                 if(Input.GetKeyDown(KeyCode.Tilde))
                 {
-                    ModManager.debugMode = true;
+                    ModManager.ToggleDebugMode();
                 }
 
                 if (ModManager.playerInfoDict.Count == 0)
