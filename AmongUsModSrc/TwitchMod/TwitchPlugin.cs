@@ -247,15 +247,15 @@ namespace TestMod
 
             public static void ToggleDebugMode()
             {
-                if(debugMode)
+                debugMode = !debugMode;
+                if (debugMode)
                 {
                     WriteToConsole("Debug Mode enabled. Please use for dev purposes only.");
                 }
                 else
                 {
-                    WriteToConsole("Debug Mode disabled.");
+                    System.Console.WriteLine("Twitch Mod: Debug Mode disabled.");
                 }
-                debugMode = !debugMode;
             }
 
             public static void WriteToConsole(string toOutput)
