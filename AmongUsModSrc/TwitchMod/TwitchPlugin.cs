@@ -118,7 +118,8 @@ namespace TestMod
         public static class PlayerControl_MurderPlayerPatch
         {
             public static bool wasImpostor;
-            public static byte origColor;
+            //Set to 0 to avoid potential nastiness with KillAnimation patch
+            public static byte origColor = 0;
 
             public static void Prefix(PlayerControl __instance, [HarmonyArgument(0)] PlayerControl target)
             {
@@ -139,17 +140,15 @@ namespace TestMod
                 //Check if this is a self kill, aka a twitch kill
                 if (target == __instance)
                 {
-                    //Restore original impostor status
+                    //Restore original color and impostor status
                     __instance.Data.IsImpostor = wasImpostor;
                     __instance.RpcSetColor(origColor);
                 }
             }
         }
 
-        
-
         [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.FixedUpdate))]
-        public static class ExamplePatch
+        public static class PlayerControl_FixedUpdatePatch
         {
             public static void Postfix(PlayerControl __instance)
             {
@@ -273,6 +272,19 @@ namespace TestMod
             public static void Postfix()
             {
                 ModManager.UpdatePlayerDicts();
+            }
+        }
+
+        [HarmonyPatch(typeof(KillAnimation), nameof(KillAnimation.CoPerformKill))]
+        public static class KillAnimation_CoPerformKillPatch
+        {
+            public static void Prefix([HarmonyArgument(0)] PlayerControl source, [HarmonyArgument(0)] PlayerControl target)
+            {
+                //Check if this is a self kill, aka a twitch kill
+                if(source == target)
+                {
+                    source.RpcSetColor(PlayerControl_MurderPlayerPatch.origColor);
+                }
             }
         }
     }
