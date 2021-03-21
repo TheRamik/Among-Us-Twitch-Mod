@@ -23,6 +23,8 @@ namespace TestMod
         {
             Name = Config.Bind("Fake", "Name", "SUSMAN");
 
+            //Really janky way of adding the custom twitch color. If anyone knows a better way, please do.
+
             //this are the short names
             string[] shortColorNames =
             {
@@ -118,60 +120,72 @@ namespace TestMod
             public static bool wasImpostor;
             public static byte origColor;
 
-            public static void Prefix(PlayerControl __instance)
+            public static void Prefix(PlayerControl __instance, [HarmonyArgument(0)] PlayerControl target)
             {
-                //Save original impostor status
-                wasImpostor = __instance.Data.IsImpostor;
-                origColor = __instance.Data.ColorId;
-                //Set the player to an impostor so they can kill themselves
-                __instance.Data.IsImpostor = true;
-                __instance.RpcSetColor(12);
+                //Check if this is a self kill, aka a twitch kill
+                if (target == __instance)
+                {
+                    //Save original impostor status
+                    wasImpostor = __instance.Data.IsImpostor;
+                    origColor = __instance.Data.ColorId;
+                    //Set the player to an impostor so they can kill themselves
+                    __instance.Data.IsImpostor = true;
+                    __instance.RpcSetColor(12);
+                }
             }
 
-            public static void Postfix(PlayerControl __instance)
+            public static void Postfix(PlayerControl __instance, [HarmonyArgument(0)] PlayerControl target)
             {
-                //Restore original impostor status
-                __instance.Data.IsImpostor = wasImpostor;
-                __instance.RpcSetColor(origColor);
+                //Check if this is a self kill, aka a twitch kill
+                if (target == __instance)
+                {
+                    //Restore original impostor status
+                    __instance.Data.IsImpostor = wasImpostor;
+                    __instance.RpcSetColor(origColor);
+                }
             }
         }
+
+        
 
         [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.FixedUpdate))]
         public static class ExamplePatch
         {
             public static void Postfix(PlayerControl __instance)
             {
-                __instance.nameText.Text = "SUSMAN";
-                __instance.RpcSetColor(12);
+                //__instance.RpcSetColor(12);
+                if(Input.GetKeyDown(KeyCode.Tilde))
+                {
+                    ModManager.debugMode = true;
+                }
 
                 if (ModManager.playerInfoDict.Count == 0)
                 {
                     ModManager.UpdatePlayerDicts();
                 }
 
-                if (Input.GetKeyDown(KeyCode.G))
+                if (ModManager.debugMode)
                 {
-                    System.Console.WriteLine("G pressed");
-                }
-                if (Input.GetKeyDown(KeyCode.Alpha0))
-                {
-                    System.Console.WriteLine("0 pressed");
-                    ModManager.MurderPlayerDebug(0);
-                }
-                if (Input.GetKeyDown(KeyCode.Alpha1))
-                {
-                    System.Console.WriteLine("1 pressed");
-                    ModManager.MurderPlayerDebug(1);
-                }
-                if (Input.GetKeyDown(KeyCode.Alpha2))
-                {
-                    System.Console.WriteLine("2 pressed");
-                    ModManager.MurderPlayerDebug(2);
-                }
-                if (Input.GetKeyDown(KeyCode.Alpha3))
-                {
-                    System.Console.WriteLine("3 pressed");
-                    ModManager.MurderPlayerDebug(3);
+                    if (Input.GetKeyDown(KeyCode.Alpha0))
+                    {
+                        ModManager.WriteToConsole("0 pressed");
+                        ModManager.MurderPlayerDebug(0);
+                    }
+                    if (Input.GetKeyDown(KeyCode.Alpha1))
+                    {
+                        ModManager.WriteToConsole("1 pressed");
+                        ModManager.MurderPlayerDebug(1);
+                    }
+                    if (Input.GetKeyDown(KeyCode.Alpha2))
+                    {
+                        ModManager.WriteToConsole("2 pressed");
+                        ModManager.MurderPlayerDebug(2);
+                    }
+                    if (Input.GetKeyDown(KeyCode.Alpha3))
+                    {
+                        ModManager.WriteToConsole("3 pressed");
+                        ModManager.MurderPlayerDebug(3);
+                    }
                 }
             }
         }
@@ -187,56 +201,9 @@ namespace TestMod
             }
         }
 
-        [HarmonyPatch(typeof(GameStartManager), nameof(GameStartManager.Update))]
-        public static class TestPatch
-        {
-
-            public static testClass test = new testClass();
-
-            public static void Postfix()
-            {
-                if (GameStartManager.Instance.startState == GameStartManager.StartingStates.Starting)
-                {
-                    //foreach (GameData.PlayerInfo playerInfo in GameData.Instance.AllPlayers)
-                    //{
-                    //    System.Console.WriteLine(playerInfo.PlayerId);
-                    //    System.Console.WriteLine(playerInfo.PlayerName);
-                    //    testMethod(playerInfo.PlayerName);
-                    //    foreach (PlayerControl playerControl in PlayerControl.AllPlayerControls)
-                    //    {
-                    //        System.Console.WriteLine(playerControl.PlayerId);
-                    //        if (playerControl.PlayerId == playerInfo.PlayerId)
-                    //        {
-                    //            System.Console.WriteLine("YOPOOO");
-                    //            playerControl.Die(DeathReason.Kill);
-                    //        }
-                    //    }
-
-                    //}
-                    
-                }
-
-                //Maybe later have something that sets a bool when the game is over and when it starts?
-                //Like playerDicts set = true? on game start and false on game end?
-
-            }
-            public static void testMethod(string playerName)
-            {
-                test.testMethod(playerName);
-            }
-        }
-
-        public class testClass
-        {
-            public void testMethod(string playerName)
-            {
-                //System.Console.WriteLine("Method works! Got " + playerName);
-                //System.Console.WriteLine("No for real it works!");
-            }
-        }
-
         public static class ModManager
         {
+            public static bool debugMode = false;
             public static GameData.PlayerInfo localPlayer;
             public static Dictionary<string, GameData.PlayerInfo> playerInfoDict = new Dictionary<string, GameData.PlayerInfo>();
             public static Dictionary<string, PlayerControl> playerControlDict = new Dictionary<string, PlayerControl>();
@@ -250,13 +217,13 @@ namespace TestMod
                 List<string> playerNames = new List<string>();
                 foreach (string name in playerInfoDict.Keys) playerNames.Add(name);
 
-                System.Console.WriteLine("Trying to kill " + playerNames[playerNum]);
+                WriteToConsole("Trying to kill " + playerNames[playerNum]);
                 playerControlDict[playerNames[playerNum]].RpcMurderPlayer(playerControlDict[playerNames[playerNum]]);
             }
 
             public static void UpdatePlayerDicts()
             {
-                System.Console.WriteLine("Fetching/refreshing player data...");
+                WriteToConsole("Fetching/refreshing player data...");
                 localPlayer = null;
                 playerInfoDict.Clear();
                 playerControlDict.Clear();
@@ -266,18 +233,38 @@ namespace TestMod
                     if (PlayerControl.LocalPlayer == player)
                     {
                         localPlayer = playerInfo;
-                        System.Console.WriteLine(playerInfo.PlayerName + " is the local player, aka streamer");
-                        System.Console.WriteLine(playerInfo.PlayerName + "==" + localPlayer.PlayerName + "?");
+                        WriteToConsole(playerInfo.PlayerName + " is the local player, aka streamer");
+                        WriteToConsole(playerInfo.PlayerName + "==" + localPlayer.PlayerName + "?");
                     }
                     else
                     {
-                        System.Console.WriteLine(playerInfo.PlayerName + " is not the local player.");
+                        WriteToConsole(playerInfo.PlayerName + " is not the local player.");
                     }
                     playerInfoDict[playerInfo.PlayerName] = playerInfo;
                     playerControlDict[playerInfo.PlayerName] = player;
                 }
             }
 
+            public static void ToggleDebugMode()
+            {
+                debugMode = !debugMode;
+                if(debugMode)
+                {
+                    WriteToConsole("Debug Mode enabled. Please use for dev purposes only.");
+                }
+                else
+                {
+                    WriteToConsole("Debug Mode disabled.");
+                }
+            }
+
+            public static void WriteToConsole(string toOutput)
+            {
+                if (debugMode)
+                {
+                    System.Console.WriteLine("Twitch Mod: " + toOutput);
+                }
+            }
         }
 
         [HarmonyPatch(typeof(GameStartManager), nameof(GameStartManager.FinallyBegin))]
@@ -287,28 +274,6 @@ namespace TestMod
             {
                 ModManager.UpdatePlayerDicts();
             }
-        }
-
-        [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.Start))]
-        public static class PlayerControl_StartPatch
-        {
-            //public static void Postfix(PlayerControl __instance)
-            //{
-            //    System.Console.WriteLine("Called Start");
-            //    System.Console.WriteLine(__instance.PlayerId);
-            //    System.Console.WriteLine(__instance.AmOwner);
-            //    if (__instance.AmOwner)
-            //    {
-            //        GameData.PlayerInfo localInfo = (GameData.Instance.GetPlayerById(__instance.PlayerId));
-            //        System.Console.Write(localInfo.PlayerId);
-            //        System.Console.Write(localInfo.PlayerName);
-            //        ModManager.localPlayer = GameData.Instance.GetPlayerById(__instance.PlayerId);
-            //    }
-            //    if (ModManager.localPlayer != null)
-            //    {
-            //        System.Console.WriteLine(ModManager.localPlayer.PlayerName);
-            //    }
-            //}
         }
     }
 }
