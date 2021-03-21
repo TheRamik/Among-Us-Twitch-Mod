@@ -94,13 +94,14 @@ namespace ExampleTwitchPubsub
             var accessToken = Settings.GetSection("twitch.pubsub").GetValue<string>("oauth");
             client = new HttpClient();
             var userData = new UserData(channelId, clientId, secret, accessToken);
-
+            Console.WriteLine("channelId: " + userData.ChannelId);
+            Console.WriteLine("clientId " + userData.ClientId);
+            Console.WriteLine("secret: " + userData.Secret);
+            Console.WriteLine("accessToken: " + userData.UserAccessToken);
             //set up twitchlib api
             API = new TwitchAPI();
             API.Settings.ClientId = clientId;
             API.Settings.Secret = secret;
-
-            updateCustomReward(client, userData, "e302729f-fcdc-4836-897f-54a57550bc83", "test test 123");
 
             //Set up twitchlib pubsub
             PubSub = new TwitchPubSub();
@@ -108,6 +109,8 @@ namespace ExampleTwitchPubsub
             PubSub.OnPubSubServiceConnected += OnPubSubServiceConnected;
             PubSub.OnPubSubServiceClosed += OnPubSubServiceClosed;
             PubSub.OnPubSubServiceError += OnPubSubServiceError;
+
+            updateCustomReward(client, userData, "e302729f-fcdc-4836-897f-54a57550bc83", "test test 123");
 
             //Set up listeners
             ListenToBits(channelId);
@@ -143,7 +146,7 @@ namespace ExampleTwitchPubsub
 
                 request.Content = new StringContent("{\"prompt\":" + prompt + "}");
                 request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-
+                Console.WriteLine(request.ToString());
                 var response = await client.SendAsync(request);
                 Console.WriteLine(response.ToString());
             }
@@ -244,18 +247,18 @@ namespace ExampleTwitchPubsub
 
         private void PubSub_OnCustomRewardUpdated(object sender, OnCustomRewardUpdatedArgs e)
         {
-            // _logger.Information($"Reward {e.RewardTitle} has been updated");
+            _logger.Information($"Reward {e.RewardTitle} has been updated");
         }
 
         private void PubSub_OnCustomRewardDeleted(object sender, OnCustomRewardDeletedArgs e)
         {
-            // _logger.Information($"Reward {e.RewardTitle} has been removed");
+            _logger.Information($"Reward {e.RewardTitle} has been removed");
         }
 
         private void PubSub_OnCustomRewardCreated(object sender, OnCustomRewardCreatedArgs e)
         {
-            // _logger.Information($"{e.RewardTitle} has been created");
-            // _logger.Debug($"{e.RewardTitle} (\"{e.RewardId}\")");
+            _logger.Information($"{e.RewardTitle} has been created");
+            _logger.Debug($"{e.RewardTitle} (\"{e.RewardId}\")");
         }
 
         private void PubSub_OnRewardRedeemed(object sender, OnRewardRedeemedArgs e)

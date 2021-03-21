@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -67,9 +67,6 @@
     <Reference Include="Microsoft.Extensions.FileSystemGlobbing, Version=5.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>packages\Microsoft.Extensions.FileSystemGlobbing.5.0.0\lib\net461\Microsoft.Extensions.FileSystemGlobbing.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Extensions.Logging.Abstractions, Version=3.1.5.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
-      <HintPath>packages\Microsoft.Extensions.Logging.Abstractions.3.1.5\lib\netstandard2.0\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.Extensions.Primitives, Version=5.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>packages\Microsoft.Extensions.Primitives.5.0.0\lib\net461\Microsoft.Extensions.Primitives.dll</HintPath>
     </Reference>
@@ -84,9 +81,6 @@
     </Reference>
     <Reference Include="Serilog.Sinks.Console, Version=3.1.1.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
       <HintPath>packages\Serilog.Sinks.Console.3.1.1\lib\net45\Serilog.Sinks.Console.dll</HintPath>
-    </Reference>
-    <Reference Include="Serilog.Sinks.File, Version=2.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
-      <HintPath>packages\Serilog.Sinks.File.4.1.0\lib\net45\Serilog.Sinks.File.dll</HintPath>
     </Reference>
     <Reference Include="Serilog.Sinks.PeriodicBatching, Version=2.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
       <HintPath>packages\Serilog.Sinks.PeriodicBatching.2.3.0\lib\net45\Serilog.Sinks.PeriodicBatching.dll</HintPath>
@@ -117,11 +111,6 @@
     <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
     </Reference>
-    <Reference Include="System.Runtime, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>packages\System.Runtime.4.3.0\lib\net462\System.Runtime.dll</HintPath>
-      <Private>True</Private>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>packages\System.Runtime.CompilerServices.Unsafe.5.0.0\lib\net45\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
@@ -140,17 +129,6 @@
       <Private>True</Private>
       <Private>True</Private>
     </Reference>
-    <Reference Include="System.Security.Cryptography.X509Certificates, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>packages\System.Security.Cryptography.X509Certificates.4.3.0\lib\net461\System.Security.Cryptography.X509Certificates.dll</HintPath>
-      <Private>True</Private>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.Text.Encodings.Web, Version=5.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>packages\System.Text.Encodings.Web.5.0.0\lib\net461\System.Text.Encodings.Web.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Text.Json, Version=5.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>packages\System.Text.Json.5.0.0\lib\net461\System.Text.Json.dll</HintPath>
-    </Reference>
     <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
     </Reference>
@@ -162,47 +140,108 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="TwitchLib.Api, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\TwitchLib.Api.3.2.0\lib\netstandard2.0\TwitchLib.Api.dll</HintPath>
-    </Reference>
-    <Reference Include="TwitchLib.Api.Core, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\TwitchLib.Api.Core.3.2.0\lib\netstandard2.0\TwitchLib.Api.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="TwitchLib.Api.Core.Enums, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\TwitchLib.Api.Core.Enums.3.2.0\lib\netstandard2.0\TwitchLib.Api.Core.Enums.dll</HintPath>
-    </Reference>
-    <Reference Include="TwitchLib.Api.Core.Interfaces, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\TwitchLib.Api.Core.Interfaces.3.2.0\lib\netstandard2.0\TwitchLib.Api.Core.Interfaces.dll</HintPath>
-    </Reference>
-    <Reference Include="TwitchLib.Api.Core.Models, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\TwitchLib.Api.Core.Models.3.2.0\lib\netstandard2.0\TwitchLib.Api.Core.Models.dll</HintPath>
-    </Reference>
-    <Reference Include="TwitchLib.Api.Helix, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\TwitchLib.Api.Helix.3.2.0\lib\netstandard2.0\TwitchLib.Api.Helix.dll</HintPath>
-    </Reference>
-    <Reference Include="TwitchLib.Api.Helix.Models, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\TwitchLib.Api.Helix.Models.3.2.0\lib\netstandard2.0\TwitchLib.Api.Helix.Models.dll</HintPath>
-    </Reference>
-    <Reference Include="TwitchLib.Api.V5, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\TwitchLib.Api.V5.3.2.0\lib\netstandard2.0\TwitchLib.Api.V5.dll</HintPath>
-    </Reference>
-    <Reference Include="TwitchLib.Api.V5.Models, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\TwitchLib.Api.V5.Models.3.2.0\lib\netstandard2.0\TwitchLib.Api.V5.Models.dll</HintPath>
-    </Reference>
-    <Reference Include="TwitchLib.Client, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\TwitchLib.Client.3.2.0\lib\netstandard2.0\TwitchLib.Client.dll</HintPath>
-    </Reference>
-    <Reference Include="TwitchLib.Client.Enums, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\TwitchLib.Client.Enums.3.2.0\lib\netstandard2.0\TwitchLib.Client.Enums.dll</HintPath>
-    </Reference>
-    <Reference Include="TwitchLib.Client.Models, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\TwitchLib.Client.Models.3.2.0\lib\netstandard2.0\TwitchLib.Client.Models.dll</HintPath>
-    </Reference>
     <Reference Include="TwitchLib.Communication, Version=1.0.3.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\TwitchLib.Communication.1.0.3\lib\netstandard2.0\TwitchLib.Communication.dll</HintPath>
     </Reference>
-    <Reference Include="TwitchLib.PubSub, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\TwitchLib.PubSub.3.2.0\lib\netstandard2.0\TwitchLib.PubSub.dll</HintPath>
+    <Reference Include="Serilog">
+      <HintPath>packages\Serilog.2.10.0\lib\net46\Serilog.dll</HintPath>
+    </Reference>
+    <Reference Include="TwitchLib.Api.Core.Enums">
+      <HintPath>packages\TwitchLib.Api.Core.Enums.3.2.2\lib\netstandard2.0\TwitchLib.Api.Core.Enums.dll</HintPath>
+    </Reference>
+    <Reference Include="TwitchLib.Api.Core.Interfaces">
+      <HintPath>packages\TwitchLib.Api.Core.Interfaces.3.2.2\lib\netstandard2.0\TwitchLib.Api.Core.Interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="TwitchLib.Api.Core.Models">
+      <HintPath>packages\TwitchLib.Api.Core.Models.3.2.2\lib\netstandard2.0\TwitchLib.Api.Core.Models.dll</HintPath>
+    </Reference>
+    <Reference Include="TwitchLib.Api.Core">
+      <HintPath>packages\TwitchLib.Api.Core.3.2.2\lib\netstandard2.0\TwitchLib.Api.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="TwitchLib.Api.Helix.Models">
+      <HintPath>packages\TwitchLib.Api.Helix.Models.3.2.2\lib\netstandard2.0\TwitchLib.Api.Helix.Models.dll</HintPath>
+    </Reference>
+    <Reference Include="TwitchLib.Api.Helix">
+      <HintPath>packages\TwitchLib.Api.Helix.3.2.2\lib\netstandard2.0\TwitchLib.Api.Helix.dll</HintPath>
+    </Reference>
+    <Reference Include="TwitchLib.Api.V5.Models">
+      <HintPath>packages\TwitchLib.Api.V5.Models.3.2.2\lib\netstandard2.0\TwitchLib.Api.V5.Models.dll</HintPath>
+    </Reference>
+    <Reference Include="TwitchLib.Api.V5">
+      <HintPath>packages\TwitchLib.Api.V5.3.2.2\lib\netstandard2.0\TwitchLib.Api.V5.dll</HintPath>
+    </Reference>
+    <Reference Include="TwitchLib.Api">
+      <HintPath>packages\TwitchLib.Api.3.2.2\lib\netstandard2.0\TwitchLib.Api.dll</HintPath>
+    </Reference>
+    <Reference Include="TwitchLib.PubSub">
+      <HintPath>packages\TwitchLib.PubSub.3.2.1\lib\netstandard2.0\TwitchLib.PubSub.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Configuration.Binder">
+      <HintPath>packages\Microsoft.Extensions.Configuration.Binder.5.0.0\lib\net461\Microsoft.Extensions.Configuration.Binder.dll</HintPath>
+    </Reference>
+    <Reference Include="mscorlib" />
+    <Reference Include="Serilog.Sinks.Console">
+      <HintPath>packages\Serilog.Sinks.Console.3.1.1\lib\net45\Serilog.Sinks.Console.dll</HintPath>
+    </Reference>
+    <Reference Include="Serilog.Sinks.File">
+      <HintPath>packages\Serilog.Sinks.File.4.1.0\lib\net45\Serilog.Sinks.File.dll</HintPath>
+    </Reference>
+    <Reference Include="Serilog.Sinks.RollingFile">
+      <HintPath>packages\Serilog.Sinks.RollingFile.3.3.0\lib\net45\Serilog.Sinks.RollingFile.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Logging.Abstractions">
+      <HintPath>packages\Microsoft.Extensions.Logging.Abstractions.5.0.0\lib\net461\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime">
+      <HintPath>packages\System.Runtime.4.3.1\lib\net462\System.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security.Cryptography.X509Certificates">
+      <HintPath>packages\System.Security.Cryptography.X509Certificates.4.3.2\lib\net461\System.Security.Cryptography.X509Certificates.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Encodings.Web">
+      <HintPath>packages\System.Text.Encodings.Web.5.0.1\lib\net461\System.Text.Encodings.Web.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Json">
+      <HintPath>packages\System.Text.Json.5.0.1\lib\net461\System.Text.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="TwitchLib.Client.Enums">
+      <HintPath>packages\TwitchLib.Client.Enums.3.2.1\lib\netstandard2.0\TwitchLib.Client.Enums.dll</HintPath>
+    </Reference>
+    <Reference Include="TwitchLib.Client.Models">
+      <HintPath>packages\TwitchLib.Client.Models.3.2.1\lib\netstandard2.0\TwitchLib.Client.Models.dll</HintPath>
+    </Reference>
+    <Reference Include="TwitchLib.Client">
+      <HintPath>packages\TwitchLib.Client.3.2.1\lib\netstandard2.0\TwitchLib.Client.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions">
+      <HintPath>packages\Microsoft.Extensions.DependencyInjection.Abstractions.2.0.0\lib\netstandard2.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Options">
+      <HintPath>packages\Microsoft.Extensions.Options.2.0.0\lib\netstandard2.0\Microsoft.Extensions.Options.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Logging">
+      <HintPath>packages\Microsoft.Extensions.Logging.2.0.0\lib\netstandard2.0\Microsoft.Extensions.Logging.dll</HintPath>
+    </Reference>
+    <Reference Include="Serilog.Extensions.Logging">
+      <HintPath>packages\Serilog.Extensions.Logging.3.0.1\lib\netstandard2.0\Serilog.Extensions.Logging.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.DotNet.PlatformAbstractions">
+      <HintPath>packages\Microsoft.DotNet.PlatformAbstractions.2.0.4\lib\net45\Microsoft.DotNet.PlatformAbstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.DependencyModel">
+      <HintPath>packages\Microsoft.Extensions.DependencyModel.2.0.4\lib\net451\Microsoft.Extensions.DependencyModel.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Options.ConfigurationExtensions">
+      <HintPath>packages\Microsoft.Extensions.Options.ConfigurationExtensions.2.0.0\lib\netstandard2.0\Microsoft.Extensions.Options.ConfigurationExtensions.dll</HintPath>
+    </Reference>
+    <Reference Include="Serilog.Settings.Configuration">
+      <HintPath>packages\Serilog.Settings.Configuration.3.1.0\lib\net461\Serilog.Settings.Configuration.dll</HintPath>
+    </Reference>
+    <Reference Include="Serilog.Formatting.Compact">
+      <HintPath>packages\Serilog.Formatting.Compact.1.1.0\lib\net452\Serilog.Formatting.Compact.dll</HintPath>
+    </Reference>
+    <Reference Include="Serilog.Sinks.PeriodicBatching">
+      <HintPath>packages\Serilog.Sinks.PeriodicBatching.2.3.0\lib\net45\Serilog.Sinks.PeriodicBatching.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
