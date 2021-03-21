@@ -154,7 +154,7 @@ namespace TestMod
             public static void Postfix(PlayerControl __instance)
             {
                 //__instance.RpcSetColor(12);
-                if(Input.GetKeyDown(KeyCode.Tilde))
+                if(Input.GetKeyDown(KeyCode.BackQuote))
                 {
                     ModManager.ToggleDebugMode();
                 }
