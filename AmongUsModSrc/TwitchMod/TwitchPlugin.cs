@@ -247,7 +247,6 @@ namespace TestMod
 
             public static void ToggleDebugMode()
             {
-                debugMode = !debugMode;
                 if(debugMode)
                 {
                     WriteToConsole("Debug Mode enabled. Please use for dev purposes only.");
@@ -256,6 +255,7 @@ namespace TestMod
                 {
                     WriteToConsole("Debug Mode disabled.");
                 }
+                debugMode = !debugMode;
             }
 
             public static void WriteToConsole(string toOutput)
