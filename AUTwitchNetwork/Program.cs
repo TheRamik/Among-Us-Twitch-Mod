@@ -3,35 +3,19 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using Serilog;
 using TwitchLib.Api;
 using TwitchLib.Api.Core.Enums;
+using TwitchLib.Api.Core.Exceptions;
+using TwitchLib.Api.Helix.Models.ChannelPoints;
+using TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward;
+using TwitchLib.Api.Helix.Models.ChannelPoints.UpdateCustomReward;
 using TwitchLib.Api.Helix.Models.ChannelPoints.UpdateCustomRewardRedemptionStatus;
 using TwitchLib.Api.Interfaces;
 using TwitchLib.PubSub;
 using TwitchLib.PubSub.Events;
 using TwitchLib.PubSub.Interfaces;
-
-public class CustomRewardBody
-{
-    public string title { get; set; }
-    public string prompt { get; set; }
-    public int cost { get; set; }
-    public bool is_user_input_required { get; set; }
-    public bool is_enabled { get; set; }
-    public bool is_global_countdown_enabled { get; set; }
-    public int global_countdown_seconds { get; set; }
-}
-
-public struct RewardData
-{
-    public CustomRewardBody[] data;
-}
 
 public struct Settings
 {
@@ -44,8 +28,6 @@ public struct Twitch
     public string channelId;
     public SettingAPI api;
     public Token token;
-    public List<string> rewards;
-
 }
 
 public struct SettingAPI
@@ -67,7 +49,7 @@ public struct RefreshResponse
     public string refresh_token;
 }
 
-namespace ExampleTwitchPubsub
+namespace AUTwitchNetwork
 {
 
     /// <summary>
@@ -77,16 +59,30 @@ namespace ExampleTwitchPubsub
     {
         /// <summary>Serilog</summary>
         private static ILogger _logger;
-        /// <summary>Settings</summary>
-        public static IConfiguration Settings;
 
+        /// <summary>Settings</summary>
         public static Settings mySettings;
+
         /// <summary>Twitchlib Pubsub</summary>
         public static ITwitchPubSub PubSub;
 
         public static ITwitchAPI API;
 
-        static HttpClient client;
+        /// <summary>
+        /// 
+        /// </summary>
+        public Dictionary<int, CustomReward> rewards;
+
+        public string KillPlayerString = "Among Us: Kill Player";
+        public string SwapPlayersString = "Among Us: Swap Players";
+
+
+        ~Program()
+        {
+            _logger.Information("Going in destructor");
+            Task.Run(() => updateCustomReward(rewards[0].Id, rewards[0].Prompt, false));
+            Task.Run(() => updateCustomReward(rewards[1].Id, rewards[1].Prompt, false));
+        }
 
         /// <summary>
         /// Main method
@@ -105,7 +101,6 @@ namespace ExampleTwitchPubsub
             using (StreamReader r = new StreamReader("Settings.json"))
             {
                 string json = r.ReadToEnd();
-                Console.WriteLine(json);
                 mySettings = JsonConvert.DeserializeObject<Settings>(json);
             }
 
@@ -127,30 +122,44 @@ namespace ExampleTwitchPubsub
             var clientId = mySettings.twitch.api.clientId;
             var secret = mySettings.twitch.api.secret;
             var accessToken = mySettings.twitch.token.userAccess;
-            client = new HttpClient();
 
-            Console.WriteLine("channelId: " + channelId);
-            Console.WriteLine("clientId: " + clientId);
-            Console.WriteLine("secret: " + secret);
-            Console.WriteLine("accessToken: " + accessToken);
-
-            var rewards = await getCustomRewards();
-            for (int i = 0; i < rewards.Length - 1; i++)
-            {
-                if (rewards[i].title == "Among Us: Kill Player" ||
-                    rewards[i].title == "Among Us: Swap Players")
-                {
-                    Console.WriteLine("This exists");
-                    Console.WriteLine("reward = " + rewards); 
-                }
-            }
-            // Check if the access token is still valid; if not refresh
-            // await refreshAccessToken(client);
+            rewards = new Dictionary<int, CustomReward>();
 
             //set up twitchlib api
             API = new TwitchAPI();
             API.Settings.ClientId = clientId;
             API.Settings.Secret = secret;
+
+            var twitchRewards = await getCustomRewards();
+            for (int i = 0; i <= twitchRewards.Length - 1; i++)
+            {
+                int rewardKey = -1;
+                if (twitchRewards[i].Title == KillPlayerString)
+                {
+                    rewardKey = 0;
+                }
+                else if (twitchRewards[i].Title == SwapPlayersString)
+                {
+                    rewardKey = 1;
+                }
+                if (rewardKey >= 0)
+                {
+                    _logger.Information($"{rewardKey} for {twitchRewards[i].Title}");
+                    rewards.Add(rewardKey, await updateCustomReward(
+                        twitchRewards[i].Id, twitchRewards[i].Prompt, true));
+                }
+            }
+
+            // if rewards isn't set up, add it
+            if (!rewards.ContainsKey(0))
+            {
+                rewards.Add(0, await createKillPlayerReward());
+            }
+
+            if (!rewards.ContainsKey(1))
+            {
+                rewards.Add(1, await createSwapPlayersReward());
+            }
 
             //Set up twitchlib pubsub
             PubSub = new TwitchPubSub();
@@ -166,37 +175,11 @@ namespace ExampleTwitchPubsub
             //Connect to pubsub
             PubSub.Connect();
 
-            // updateCustomReward
-            updateCustomReward("e302729f-fcdc-4836-897f-54a57550bc83", "test test 12345");
-
             //Keep the program going
             await Task.Delay(Timeout.Infinite);
         }
 
         #region Reward APIs
-
-        /// <summary>
-        /// Get a list of custom rewards from the channel. See the Twitch API
-        /// documentation at
-        /// https://dev.twitch.tv/docs/api/reference#get-custom-reward
-        /// for more info.
-        /// </summary>
-        public async Task<CustomRewardBody[]> getCustomRewards()
-        {
-            Console.WriteLine("Inside of getCustomRewards");
-            var request = createDefaultRequestMessage("GET", createCustomRewardURI());
-            Console.WriteLine(request.ToString());
-            var response = await client.SendAsync(request);
-            Console.WriteLine(response.ToString());
-            if (response.StatusCode == HttpStatusCode.Unauthorized)
-            {
-                await refreshAccessToken();
-                request = createDefaultRequestMessage("GET", createCustomRewardURI());
-                response = await client.SendAsync(request);
-            }
-            var results = await responseJsonToObject<RewardData>(response.Content);
-            return results.data;
-        }
 
         /// <summary>
         /// Refreshes the token when the user access token expires. Updates the
@@ -206,56 +189,100 @@ namespace ExampleTwitchPubsub
         /// </summary>
         public async Task refreshAccessToken()
         {
-            var uri = "https://id.twitch.tv/oauth2/token";
-            uri += "?grant_type=refresh_token";
-            uri += "&refresh_token=" + mySettings.twitch.token.refresh;
-            uri += "&client_id=" + mySettings.twitch.api.clientId;
-            uri += "&client_secret=" + mySettings.twitch.api.secret;
-            var content = new StringContent("application/x-www-form-urlencoded");
-            var response = await client.PostAsync(uri, content);
-            if (response != null)
+            try
             {
-                var results = await responseJsonToObject<RefreshResponse>(response.Content);
-                mySettings.twitch.token.userAccess = results.access_token;
+                var response = await API.V5.Auth.RefreshAuthTokenAsync(
+                    mySettings.twitch.token.refresh, mySettings.twitch.api.secret, mySettings.twitch.api.clientId);
+                mySettings.twitch.token.userAccess = response.AccessToken;
             }
-
+            catch (BadRequestException e)
+            {
+                _logger.Information($"{e.Message}");
+            }
         }
 
         /// <summary>
-        /// Creates the custom reward if it does not exist already. Appends the
-        /// rewards's id to settings.json. See the Twitch API documentation at
+        /// Get a list of custom rewards from the channel. See the Twitch API
+        /// documentation at
+        /// https://dev.twitch.tv/docs/api/reference#get-custom-reward
+        /// for more info.
+        /// </summary>
+        public async Task<CustomReward[]> getCustomRewards()
+        {
+            try {
+                var response = await API.Helix.ChannelPoints.GetCustomReward(
+                    mySettings.twitch.channelId, null, false, mySettings.twitch.token.userAccess);
+                return response.Data;
+            }
+            catch (InvalidCredentialException e)
+            {
+                _logger.Information($"{e.Message}");
+                await refreshAccessToken();
+                return await getCustomRewards();
+            }
+        }
+
+        /// <summary>
+        /// Creates the Kill Player custom reward on the channel using
+        /// the CreateCustomRewards API.
+        /// </summary>
+        public Task<CustomReward> createKillPlayerReward()
+        {
+            var killReward = new CreateCustomRewardsRequest();
+            killReward.Title = KillPlayerString;
+            killReward.Cost = 10000;
+            killReward.Prompt = "Name a player to kill: ";
+            killReward.IsEnabled = true;
+            killReward.IsUserInputRequired = true;
+            killReward.IsGlobalCooldownEnabled = true;
+            killReward.GlobalCooldownSeconds = 1000;
+            return createCustomReward(killReward);
+        }
+
+        /// <summary>
+        /// Creates the Swap Players custom reward created on the channel using
+        /// the CreateCustomRewards API.
+        /// </summary>
+        public Task<CustomReward> createSwapPlayersReward()
+        {
+            var swapReward = new CreateCustomRewardsRequest();
+            swapReward.Title = SwapPlayersString;
+            swapReward.Cost = 10000;
+            swapReward.Prompt = "Swap players with each other randomly";
+            swapReward.IsEnabled = true;
+            swapReward.IsUserInputRequired = false;
+            swapReward.IsGlobalCooldownEnabled = true;
+            swapReward.GlobalCooldownSeconds = 1000;
+            return createCustomReward(swapReward);
+        }
+
+        /// <summary>
+        /// Creates the custom reward if it does not exist already. 
+        /// See the Twitch API documentation at
         /// https://dev.twitch.tv/docs/api/reference#create-custom-rewards
         /// for more info.
         /// </summary>
-        public async void createCustomReward(CustomRewardBody rewardBody)
+        public async Task<CustomReward> createCustomReward(CreateCustomRewardsRequest reward)
         {
             Console.WriteLine("Inside of createCustomReward");
-            Console.WriteLine(JsonConvert.SerializeObject(rewardBody));
-            using (var request = createDefaultRequestMessage("POST", createCustomRewardURI()))
+            try
             {
-                request.Content = new StringContent(JsonConvert.SerializeObject(rewardBody));
-                request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-                Console.WriteLine(request.ToString());
-                var response = await client.SendAsync(request);
-                Console.WriteLine(response.ToString());
+                var response = await API.Helix.ChannelPoints.CreateCustomRewards(
+                    mySettings.twitch.channelId, reward, mySettings.twitch.token.userAccess);
+                _logger.Information($"Reward for ${response.Data[0].Title} has been added with the RewardId = {response.Data[0].Id}");
+                return response.Data[0];
             }
-        }
-
-        /// <summary>
-        /// Updates the Kill Player custom reward created on the channel using
-        /// the createCustomReward function.
-        /// </summary>
-        public void createKillPlayerReward()
-        {
-            CustomRewardBody killReward = new CustomRewardBody();
-            killReward.title = "Among Us: Kill Player";
-            killReward.cost = 10000;
-            killReward.prompt = "Kill a specific player in game";
-            killReward.is_enabled = true;
-            killReward.is_user_input_required = true;
-            killReward.is_global_countdown_enabled = true;
-            killReward.global_countdown_seconds = 1000;
-            createCustomReward(killReward);
+            catch (InvalidCredentialException e)
+            {
+                _logger.Information($"{e.Message}");
+                await refreshAccessToken();
+                return await createCustomReward(reward);
+            }
+            catch (BadRequestException e)
+            {
+                _logger.Information($"{e.Message}");
+                return null;
+            }
         }
 
         /// <summary>
@@ -264,56 +291,30 @@ namespace ExampleTwitchPubsub
         /// https://dev.twitch.tv/docs/api/reference#update-custom-reward
         /// for more info.
         /// </summary>
-        public async void updateCustomReward(string rewardId, string prompt)
+        public async Task<CustomReward> updateCustomReward(string rewardId, string prompt, bool isEnabled = false)
         {
             Console.WriteLine("Inside of updateCustomReward");
-            using (var request = createDefaultRequestMessage("PATCH", createCustomRewardURI(rewardId)))
+            try
             {
-
-                request.Content = new StringContent("{\"prompt\":\"" + prompt + "\"}");
-                request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-                Console.WriteLine(request.ToString());
-                var response = await client.SendAsync(request);
-                Console.WriteLine(response.ToString());
+                var updateReward = new UpdateCustomRewardRequest();
+                updateReward.Prompt = prompt;
+                updateReward.IsEnabled = isEnabled;
+                var response = await API.Helix.ChannelPoints.UpdateCustomReward(
+                    mySettings.twitch.channelId, rewardId, updateReward, mySettings.twitch.token.userAccess);
+                _logger.Information($"Reward {response.Data[0].Id} has been updated");
+                return response.Data[0];
             }
-        }
-
-        // Private Methods
-
-        /// <summary>
-        /// Creates the custom reward URI. If the rewardId is provided it will
-        /// add it to the URI.
-        /// </summary>
-        private string createCustomRewardURI(string rewardId = "")
-        {
-            string uri = "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + mySettings.twitch.channelId;
-            if (!String.IsNullOrEmpty(rewardId))
+            catch (InvalidCredentialException e)
             {
-                uri += "&id=" + rewardId;
+                _logger.Information($"{e.Message}");
+                await refreshAccessToken();
+                return await updateCustomReward(rewardId, prompt, isEnabled);
             }
-            return uri;
-        }
-
-        /// <summary>
-        /// Creates the HttpRequestMessage object that uses the same headers
-        /// </summary>
-        private HttpRequestMessage createDefaultRequestMessage(string method, string uri)
-        {
-            Console.WriteLine("uri = " + uri);
-            var request = new HttpRequestMessage(new HttpMethod(method), uri);
-            request.Headers.TryAddWithoutValidation("Authorization", "Bearer " + mySettings.twitch.token.userAccess);
-            request.Headers.TryAddWithoutValidation("client-id", mySettings.twitch.api.clientId);
-            return request;
-        }
-
-        /// <summary>
-        /// Converts the JSON from the HttpContent to a object based on the
-        /// object type we pass in.
-        /// </summary>
-        private async Task<T> responseJsonToObject<T>(HttpContent content)
-        {
-            var jsonString = await content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<T>(jsonString);
+            catch (BadRequestException e)
+            {
+                _logger.Information($"{e.Message}");
+                return null;
+            }
         }
 
         #endregion
@@ -342,7 +343,7 @@ namespace ExampleTwitchPubsub
         private void PubSub_OnCustomRewardCreated(object sender, OnCustomRewardCreatedArgs e)
         {
             _logger.Information($"{e.RewardTitle} has been created");
-            _logger.Debug($"{e.RewardTitle} (\"{e.RewardId}\")");
+            _logger.Information($"{e.RewardTitle} (\"{e.RewardId}\")");
         }
 
         private void PubSub_OnRewardRedeemed(object sender, OnRewardRedeemedArgs e)
@@ -352,16 +353,53 @@ namespace ExampleTwitchPubsub
             // "FULFILLED": when a broadcaster or moderator marked the reward as complete
             if (e.Status == "UNFULFILLED")
             {
-
-                _logger.Information($"{e.DisplayName} redeemed: {e.RewardTitle} with prompt ${e.RewardPrompt.Split()}. With message: {e.Message}");
+                _logger.Information($"{e.DisplayName} redeemed: {e.RewardTitle} " +
+                    $"with prompt ${e.RewardPrompt.Split()}. With message: {e.Message}");
+                fulfillCustomReward(e);
                 API.Helix.ChannelPoints.UpdateCustomRewardRedemptionStatus(e.ChannelId, e.RewardId.ToString(),
-                    new List<string>() { e.RedemptionId.ToString() }, new UpdateCustomRewardRedemptionStatusRequest() { Status = CustomRewardRedemptionStatus.CANCELED });
+                    new List<string>() { e.RedemptionId.ToString() }, 
+                    new UpdateCustomRewardRedemptionStatusRequest() { Status = CustomRewardRedemptionStatus.CANCELED });
             }
 
             if (e.Status == "FULFILLED")
             {
-                // _logger.Information($"Reward from {e.DisplayName} ({e.RewardTitle}) has been marked as complete");
+                _logger.Information($"Reward from {e.DisplayName} ({e.RewardTitle}) has been marked as complete");
             }
+        }
+
+        private void fulfillCustomReward(OnRewardRedeemedArgs e)
+        {
+            if (e.RewardTitle == "Among Us: Kill Player")
+            {
+                if (isValidCustomReward(e.RewardPrompt, e.Message))
+                {
+                    _logger.Information($"This is a valid kill. Sending over to Among Us Mod");
+                    // TODO: Pipe the command over to the C# app
+                    // If the pipe returns success, call UpdateCustomRewardRedemptionStatus with status fulfilled
+                }
+
+            }
+            else if (e.RewardTitle == "Among Us: Swap Players")
+            {
+                _logger.Information($"Going to swap players");
+                // TODO: Pipe the command over to the C# app
+                // If the pipe returns success, call UpdateCustomRewardRedemptionStatus with status fulfilled
+            }
+        }
+
+        private bool isValidCustomReward(string rewardPrompt, string rewardMessage)
+        {
+            bool isValid = false;
+            var prompt = rewardPrompt.Split('\n');
+            for(int i = 1; i <= prompt.Length - 1; i++)
+            {
+                _logger.Information($"{i}: {prompt[i]}");
+                if (prompt[i] == rewardMessage)
+                {
+                    isValid = true;
+                }
+            }
+            return isValid;
         }
 
         #endregion
@@ -381,7 +419,7 @@ namespace ExampleTwitchPubsub
         private void OnPubSubServiceConnected(object sender, EventArgs e)
         {
             _logger.Information($"Connected to pubsub server");
-            var oauth = mySettings.twitch.token.userAccess;// Settings.GetSection("twitch.pubsub").GetValue<string>("oauth");
+            var oauth = mySettings.twitch.token.userAccess;
             PubSub.SendTopics(oauth);
         }
 
