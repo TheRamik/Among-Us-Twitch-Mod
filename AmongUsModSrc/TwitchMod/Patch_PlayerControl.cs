@@ -42,7 +42,7 @@ namespace TwitchMod
         public static void Postfix(PlayerControl __instance)
         {
             //__instance.RpcSetColor(12);
-            if (Input.GetKeyDown(KeyCode.BackQuote))
+            if (Input.GetKeyDown(KeyCode.Equals))
             {
                 ModManager.ToggleDebugMode();
             }

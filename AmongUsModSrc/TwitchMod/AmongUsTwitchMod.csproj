@@ -4,8 +4,8 @@
         <Version>1.0.0</Version>
         <Mappings>NuclearPowered/Mappings:0.2.0</Mappings>
 
-        <Description>Mod template for Reactor</Description>
-        <Authors>js6pak</Authors>
+		<Description>Among Us Twitch integrations and commands</Description>
+        <Authors>Efren Aguilar</Authors>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(GamePlatform)' == 'Steam'">

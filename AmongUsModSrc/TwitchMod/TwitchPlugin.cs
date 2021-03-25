@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace TwitchMod
 {
-    [BepInPlugin(Id)]
+    [BepInPlugin(Id, "Twitch Plugin", "1.0.0")]
     [BepInProcess("Among Us.exe")]
     [BepInDependency(ReactorPlugin.Id)]
     public class TwitchPlugin : BasePlugin
@@ -24,6 +24,19 @@ namespace TwitchMod
             RegisterInIl2CppAttribute.Register();
 
             Harmony.PatchAll();
+        }
+
+        [HarmonyPriority(Priority.Low)] // to show this message last
+        [HarmonyPatch(typeof(VersionShower), nameof(VersionShower.Start))]
+        public static class VersionShower_StartPatch
+        {
+            public static void Postfix(VersionShower __instance)
+            {
+                string newString = __instance.text.Text;
+                newString += "\n\n\n\n\n\n\n[A86CF3FF]" + TwitchPlugin.Id + " 1.0.0[]";
+                __instance.text.Text = newString;
+                
+            }
         }
     }
 }
