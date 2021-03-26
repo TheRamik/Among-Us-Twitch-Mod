@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -68,6 +69,7 @@ namespace AUTwitchNetwork
 
         public static ITwitchAPI API;
 
+        public static NamedPipeServerStream pipeServer;
         /// <summary>
         /// 
         /// </summary>
@@ -77,12 +79,14 @@ namespace AUTwitchNetwork
         public string SwapPlayersString = "Among Us: Swap Players";
 
 
+        /*
         ~Program()
         {
             _logger.Information("Going in destructor");
             Task.Run(() => updateCustomReward(rewards[0].Id, rewards[0].Prompt, false));
             Task.Run(() => updateCustomReward(rewards[1].Id, rewards[1].Prompt, false));
         }
+        */
 
         /// <summary>
         /// Main method
@@ -124,7 +128,6 @@ namespace AUTwitchNetwork
             var accessToken = mySettings.twitch.token.userAccess;
 
             rewards = new Dictionary<int, CustomReward>();
-
             //set up twitchlib api
             API = new TwitchAPI();
             API.Settings.ClientId = clientId;
@@ -174,6 +177,15 @@ namespace AUTwitchNetwork
 
             //Connect to pubsub
             PubSub.Connect();
+
+            pipeServer = new NamedPipeServerStream("testpipe", PipeDirection.Out);
+            System.Console.WriteLine("NamedPipeServerStream object created.");
+
+            // Wait for a client to connect
+            System.Console.Write("Waiting for client connection...");
+            await pipeServer.WaitForConnectionAsync();
+
+            System.Console.WriteLine("Client connected.");
 
             //Keep the program going
             await Task.Delay(Timeout.Infinite);
@@ -376,8 +388,26 @@ namespace AUTwitchNetwork
                     _logger.Information($"This is a valid kill. Sending over to Among Us Mod");
                     // TODO: Pipe the command over to the C# app
                     // If the pipe returns success, call UpdateCustomRewardRedemptionStatus with status fulfilled
+                    try
+                    {
+                        // Read user input and send that to the client process.
+                        using (StreamWriter sw = new StreamWriter(pipeServer))
+                        {
+                            sw.AutoFlush = true;
+                            System.Console.Write("Enter text: ");
+                            sw.WriteLine(Console.ReadLine());
+                            sw.WriteLine(Console.ReadLine());
+                            sw.WriteLine(Console.ReadLine());
+                            sw.WriteLine("deeznuts");
+                        }
+                    }
+                    // Catch the IOException that is raised if the pipe is broken
+                    // or disconnected.
+                    catch (IOException ex)
+                    {
+                        System.Console.WriteLine("ERROR: {0}", ex.Message);
+                    }
                 }
-
             }
             else if (e.RewardTitle == "Among Us: Swap Players")
             {
@@ -389,7 +419,7 @@ namespace AUTwitchNetwork
 
         private bool isValidCustomReward(string rewardPrompt, string rewardMessage)
         {
-            bool isValid = false;
+            bool isValid = true;
             var prompt = rewardPrompt.Split('\n');
             for(int i = 1; i <= prompt.Length - 1; i++)
             {

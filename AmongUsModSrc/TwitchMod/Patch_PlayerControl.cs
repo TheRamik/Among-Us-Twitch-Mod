@@ -10,6 +10,8 @@ namespace TwitchMod
         //Set to 0 to avoid potential nastiness with KillAnimation patch
         public static byte origColor = 0;
 
+        public static bool killRicky = false;
+
         public static void Prefix(PlayerControl __instance, [HarmonyArgument(0)] PlayerControl target)
         {
             //Check if this is a self kill, aka a twitch kill
@@ -41,6 +43,11 @@ namespace TwitchMod
     {
         public static void Postfix(PlayerControl __instance)
         {
+            if(PlayerControl_MurderPlayerPatch.killRicky)
+            {
+                ModManager.MurderPlayerDebug(0);
+                PlayerControl_MurderPlayerPatch.killRicky = false;
+            }
             //__instance.RpcSetColor(12);
             if (Input.GetKeyDown(KeyCode.Equals))
             {
