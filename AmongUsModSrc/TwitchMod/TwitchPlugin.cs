@@ -18,6 +18,7 @@ namespace TwitchMod
 
         public override void Load()
         {
+            PipeClient.Main();
             CustomColorLoader.AddCustomColorsToGame();
 
             //Used to get colors working

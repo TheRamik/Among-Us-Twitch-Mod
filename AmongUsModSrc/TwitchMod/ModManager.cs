@@ -4,7 +4,7 @@ namespace TwitchMod
 {
     public static class ModManager
     {
-        public static bool debugMode = false;
+        public static bool debugMode = true;
         public static GameData.PlayerInfo localPlayer;
         public static Dictionary<string, GameData.PlayerInfo> playerInfoDict = new Dictionary<string, GameData.PlayerInfo>();
         public static Dictionary<string, PlayerControl> playerControlDict = new Dictionary<string, PlayerControl>();
