@@ -1,4 +1,6 @@
 ﻿using BepInEx;
+using System.Threading;
+using System.Threading.Tasks;
 using BepInEx.Configuration;
 using BepInEx.IL2CPP;
 using HarmonyLib;
@@ -16,10 +18,28 @@ namespace TwitchMod
 
         public Harmony Harmony { get; } = new Harmony(Id);
 
+        private async Task MainAsync()
+        {
+            System.Console.WriteLine("Before AmongUsTwitchAPI");
+            AmongUsTwitchAPI.InitAmongUsTwitchAPI();
+            AmongUsTwitchAPI.initializeRewards();
+            System.Console.WriteLine("After AmongUsTwitchAPI");
+            var twitchListener = new TwitchListener();
+            twitchListener.ListenToRewards(AmongUsTwitchAPI.GetChannelId());
+            twitchListener.Connect();
+
+            //Keep the program going
+            await Task.Delay(Timeout.Infinite);
+
+        }
+
         public override void Load()
         {
             CustomColorLoader.AddCustomColorsToGame();
+            System.Console.WriteLine("Before MainAsync");
 
+            MainAsync().GetAwaiter().GetResult();
+            System.Console.WriteLine("After AmongUsTwitchAPI");
             //Used to get colors working
             RegisterInIl2CppAttribute.Register();
 
