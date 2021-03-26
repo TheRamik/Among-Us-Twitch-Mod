@@ -36,7 +36,7 @@ namespace TwitchMod
                         System.Console.WriteLine("Received from server: {0}", temp);
                         if (temp == "deeznuts")
                         {
-                            PlayerControl_MurderPlayerPatch.killRicky = true;
+                            ModManager.killPlayer = true;
                         }
                     }
                 }

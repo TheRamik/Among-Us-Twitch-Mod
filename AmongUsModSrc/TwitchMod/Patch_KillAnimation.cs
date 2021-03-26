@@ -7,6 +7,12 @@ namespace TwitchMod
     {
         public static void Prefix([HarmonyArgument(0)] PlayerControl source, [HarmonyArgument(0)] PlayerControl target)
         {
+            //Since the animation started, the kill was successful
+            if(ModManager.killingPlayer)
+            {
+                ModManager.killingPlayer = false;
+                ModManager.SendMessageToServer("Kill successful!");
+            }
             //Check if this is a self kill, aka a twitch kill
             if (source == target)
             {

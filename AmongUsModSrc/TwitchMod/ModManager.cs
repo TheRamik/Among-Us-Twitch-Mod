@@ -9,6 +9,10 @@ namespace TwitchMod
         public static Dictionary<string, GameData.PlayerInfo> playerInfoDict = new Dictionary<string, GameData.PlayerInfo>();
         public static Dictionary<string, PlayerControl> playerControlDict = new Dictionary<string, PlayerControl>();
 
+        public static bool killPlayer = false;
+        public static string playerNameToKill = "";
+        public static bool killingPlayer = false;
+
         /// <summary>
         /// Kills the selected player based on an index of a list of playerNames
         /// </summary>
@@ -18,10 +22,42 @@ namespace TwitchMod
             List<string> playerNames = new List<string>();
             foreach (string name in playerInfoDict.Keys) playerNames.Add(name);
 
-            WriteToConsole("Trying to kill " + playerNames[playerNum]);
-            playerControlDict[playerNames[playerNum]].RpcMurderPlayer(playerControlDict[playerNames[playerNum]]);
+            try
+            {
+                WriteToConsole("Trying to kill " + playerNames[playerNum]);
+                killingPlayer = true;
+                playerControlDict[playerNames[playerNum]].RpcMurderPlayer(playerControlDict[playerNames[playerNum]]);
+            }
+            catch(System.ArgumentOutOfRangeException)
+            {
+                WriteToConsole("Kill failed, no player #" + playerNum);
+            }
         }
 
+        public static void MurderPlayerByName(string playerName)
+        {
+            //TODO: make string lowercase?
+            PlayerControl toKill;
+            WriteToConsole("Received command to try killing \"" + playerName + "\"");
+            //TODO: Send success or failure back to server
+            if(playerControlDict.TryGetValue(playerName, out toKill))
+            {
+                WriteToConsole("Trying to kill \"" + playerName + "\"");
+                killingPlayer = true;
+                //TODO: Find way to check if the command was not successful because the player was already dead
+                toKill.RpcMurderPlayer(toKill);     
+            }
+            else
+            {
+                WriteToConsole("Error: No player named \"" + playerName + "\"");
+                SendMessageToServer("Kill Failed: No player named \"" + playerName + "\"");
+            }
+        }
+
+
+        /// <summary>
+        /// Updates the player dictionary info to contain all of the current players
+        /// </summary>
         public static void UpdatePlayerDicts()
         {
             WriteToConsole("Fetching/refreshing player data...");
@@ -65,6 +101,11 @@ namespace TwitchMod
             {
                 System.Console.WriteLine("Twitch Mod: " + toOutput);
             }
+        }
+
+        public static void SendMessageToServer(string message)
+        {
+            WriteToConsole("Sending message to server: " + message);
         }
     }
 }
