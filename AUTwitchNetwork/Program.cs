@@ -362,6 +362,31 @@ namespace AUTwitchNetwork
             }
         }
 
+        private async Task<RewardRedemption> UpdateRedemptionReward(OnRewardRedeemedArgs events, CustomRewardRedemptionStatus status)
+        {
+            try
+            {
+                var response = await API.Helix.ChannelPoints.UpdateCustomRewardRedemptionStatus(events.ChannelId, events.RewardId.ToString(),
+                    new List<string>() { events.RedemptionId.ToString() },
+                    new UpdateCustomRewardRedemptionStatusRequest() { Status = status },
+                    mySettings.twitch.token.userAccess);
+                _logger.Information($"{response.Data[0]}");
+                return response.Data[0];
+            }
+            catch (InvalidCredentialException e)
+            {
+                _logger.Information($"{e.Message}");
+                await RefreshAccessToken();
+                return await UpdateRedemptionReward(events, status);
+            }
+            catch (BadRequestException e)
+            {
+                _logger.Information($"{e.Message}");
+                return null;
+            }
+            
+        }
+
         #endregion
 
         #region Reward Events
@@ -420,15 +445,12 @@ namespace AUTwitchNetwork
                     // TODO: Pipe the command over to the C# app
                     // If the pipe returns success, call UpdateCustomRewardRedemptionStatus with status fulfilled
                     SendToPipe("killplayer:" + e.RewardPrompt);
+                    await UpdateRedemptionReward(e, CustomRewardRedemptionStatus.FULFILLED);
                 }
                 else
                 {
                     _logger.Information($"This is not a valid kill. We are returning the points.");
-                    var response = await API.Helix.ChannelPoints.UpdateCustomRewardRedemptionStatus(e.ChannelId, e.RewardId.ToString(),
-                        new List<string>() { e.RedemptionId.ToString() },
-                        new UpdateCustomRewardRedemptionStatusRequest() { Status = CustomRewardRedemptionStatus.CANCELED },
-                        mySettings.twitch.token.userAccess);
-                    _logger.Information($"{response.Data[0]}");
+                    await UpdateRedemptionReward(e, CustomRewardRedemptionStatus.CANCELED);
                 }
             }
             else if (e.RewardTitle == KillRandomPlayerString)
@@ -437,11 +459,7 @@ namespace AUTwitchNetwork
                 // TODO: Pipe the command over to the C# app
                 // If the pipe returns success, call UpdateCustomRewardRedemptionStatus with status fulfilled
                 SendToPipe("killrandomplayer");
-                var response = await API.Helix.ChannelPoints.UpdateCustomRewardRedemptionStatus(e.ChannelId, e.RewardId.ToString(),
-                        new List<string>() { e.RedemptionId.ToString() },
-                        new UpdateCustomRewardRedemptionStatusRequest() { Status = CustomRewardRedemptionStatus.FULFILLED },
-                        mySettings.twitch.token.userAccess);
-                _logger.Information($"{response.Data[0]}");
+                await UpdateRedemptionReward(e, CustomRewardRedemptionStatus.FULFILLED);
             }
             else if (e.RewardTitle == SwapPlayersString)
             {
@@ -449,11 +467,7 @@ namespace AUTwitchNetwork
                 // TODO: Pipe the command over to the C# app
                 // If the pipe returns success, call UpdateCustomRewardRedemptionStatus with status fulfilled
                 SendToPipe("swapplayers");
-                var response = await API.Helix.ChannelPoints.UpdateCustomRewardRedemptionStatus(e.ChannelId, e.RewardId.ToString(),
-                        new List<string>() { e.RedemptionId.ToString() },
-                        new UpdateCustomRewardRedemptionStatusRequest() { Status = CustomRewardRedemptionStatus.FULFILLED },
-                        mySettings.twitch.token.userAccess);
-                _logger.Information($"{response.Data[0]}");
+                await UpdateRedemptionReward(e, CustomRewardRedemptionStatus.FULFILLED);
             }
         }
 
