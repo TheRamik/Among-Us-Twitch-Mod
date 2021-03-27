@@ -11,7 +11,7 @@ namespace TwitchMod
             if(ModManager.killingPlayer)
             {
                 ModManager.killingPlayer = false;
-                ModManager.SendMessageToServer("Kill successful!");
+                ModManager.AddMessageToOutBox("Kill successful!");
             }
             //Check if this is a self kill, aka a twitch kill
             if (source == target)

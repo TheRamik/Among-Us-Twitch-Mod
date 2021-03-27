@@ -37,7 +37,7 @@ namespace TwitchMod
             //Check if the kill was successful
             if(ModManager.killingPlayer)
             {
-                ModManager.SendMessageToServer("Kill failed: Unknown error, the player may have already been dead.");
+                ModManager.AddMessageToOutBox("Kill failed: Unknown error, the player may have already been dead.");
                 ModManager.killingPlayer = false;
             }
         }
@@ -48,6 +48,11 @@ namespace TwitchMod
     {
         public static void Postfix(PlayerControl __instance)
         {
+            if(ModManager.hasOutBox())
+            {
+                ModManager.SendOutboxToServer();
+            }
+
             if(ModManager.killPlayer)
             {
                 //TODO: replace with kill player by name

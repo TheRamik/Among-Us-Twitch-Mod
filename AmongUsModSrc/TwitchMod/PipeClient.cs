@@ -9,9 +9,9 @@ namespace TwitchMod
         public static async void Main()
         {
             using (NamedPipeClientStream pipeClient =
-                new NamedPipeClientStream(".", "testpipe", PipeDirection.In))
+                new NamedPipeClientStream(".", "testpipe", PipeDirection.InOut))
             {
-
+                ModManager.namedPipeClient = pipeClient;
                 // Connect to the pipe or wait until the pipe is available.
                 System.Console.Write("Attempting to connect to pipe...");
                 try { 
@@ -38,6 +38,8 @@ namespace TwitchMod
                         {
                             ModManager.killPlayer = true;
                         }
+                        ModManager.AddMessageToOutBox(temp);
+                        break;
                     }
                 }
             }

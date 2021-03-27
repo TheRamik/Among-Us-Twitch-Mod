@@ -1,9 +1,14 @@
 ﻿using System.Collections.Generic;
+using System.IO;
+using System.IO.Pipes;
 
 namespace TwitchMod
 {
     public static class ModManager
     {
+        public static NamedPipeClientStream namedPipeClient;
+        private static Queue<string> pipeOutboxQueue = new Queue<string>();
+
         public static bool debugMode = true;
         public static GameData.PlayerInfo localPlayer;
         public static Dictionary<string, GameData.PlayerInfo> playerInfoDict = new Dictionary<string, GameData.PlayerInfo>();
@@ -19,7 +24,7 @@ namespace TwitchMod
         /// <param name="playerNum"></param>
         public static void MurderPlayerDebug(int playerNum)
         {
-            List<string> playerNames = new List<string>();
+            List<string> playerNames = new List<string>();            
             foreach (string name in playerInfoDict.Keys) playerNames.Add(name);
 
             try
@@ -50,7 +55,7 @@ namespace TwitchMod
             else
             {
                 WriteToConsole("Error: No player named \"" + playerName + "\"");
-                SendMessageToServer("Kill Failed: No player named \"" + playerName + "\"");
+                AddMessageToOutBox("Kill Failed: No player named \"" + playerName + "\"");
             }
         }
 
@@ -103,9 +108,41 @@ namespace TwitchMod
             }
         }
 
-        public static void SendMessageToServer(string message)
+        public static void AddMessageToOutBox(string message)
         {
-            WriteToConsole("Sending message to server: " + message);
+            pipeOutboxQueue.Enqueue(message);
+        }
+
+        public static void ResetOutBoc()
+        {
+            pipeOutboxQueue.Clear();
+        }
+
+        public static bool hasOutBox()
+        {
+            return pipeOutboxQueue.Count > 0;
+        }
+
+        public async static void SendOutboxToServer()
+        {
+            if (namedPipeClient == null)
+            {
+                WriteToConsole("Skipping server sends, no connection.");
+                pipeOutboxQueue.Clear();
+                return;
+            }
+            using (StreamWriter sw = new StreamWriter(namedPipeClient))
+            {
+                string message;
+                sw.AutoFlush = true;
+                while(pipeOutboxQueue.Count > 0)
+                {
+                    message = pipeOutboxQueue.Dequeue();
+                    WriteToConsole("Sending message to server: " + message);
+                    await sw.WriteLineAsync("Client says: " + message);
+                    WriteToConsole("Message sent?");
+                }
+            }
         }
     }
 }
