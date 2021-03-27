@@ -19,14 +19,12 @@ namespace TwitchMod
         /// <param name="playerNum"></param>
         public static void MurderPlayerDebug(int playerNum)
         {
-            List<string> playerNames = new List<string>();
-            foreach (string name in playerInfoDict.Keys) playerNames.Add(name);
+            List<string> playerNames = getPlayerNames();
 
             try
             {
                 WriteToConsole("Trying to kill " + playerNames[playerNum]);
-                killingPlayer = true;
-                playerControlDict[playerNames[playerNum]].RpcMurderPlayer(playerControlDict[playerNames[playerNum]]);
+                TwitchMurderPlayer(playerControlDict[playerNames[playerNum]]);
             }
             catch(System.ArgumentOutOfRangeException)
             {
@@ -43,9 +41,7 @@ namespace TwitchMod
             if(playerControlDict.TryGetValue(playerName, out toKill))
             {
                 WriteToConsole("Trying to kill \"" + playerName + "\"");
-                killingPlayer = true;
-                //TODO: Find way to check if the command was not successful because the player was already dead
-                toKill.RpcMurderPlayer(toKill);     
+                TwitchMurderPlayer(toKill);
             }
             else
             {
@@ -54,6 +50,43 @@ namespace TwitchMod
             }
         }
 
+        public static void KillRandomPlayer()
+        {
+            WriteToConsole("Trying to kill a random player");
+            if(playerControlDict.Count <= 0)
+            {
+                WriteToConsole("Kill failed, no players detected");
+                return;
+            }
+
+            List<string> playerNames = getPlayerNames();
+            playerNames.Shuffle();
+            foreach(string playerName in playerNames)
+            {
+                //Check to see if this player is killable
+                if (!playerInfoDict[playerName].IsDead)
+                {
+                    WriteToConsole("Trying to kill \"" + playerName + "\"");
+                    TwitchMurderPlayer(playerControlDict[playerName]);
+                    return;
+                }
+            }
+            //If we get here, all the players are dead
+            WriteToConsole("Kill failed, all players are dead or the player data is out of date");
+        }
+
+        public static List<string> getPlayerNames()
+        {
+            List<string> playerNames = new List<string>();
+            foreach (string name in playerInfoDict.Keys) playerNames.Add(name);
+            return playerNames;
+        }
+
+        private static void TwitchMurderPlayer(PlayerControl toKill)
+        {
+            killingPlayer = true;
+            toKill.RpcMurderPlayer(toKill);
+        }
 
         /// <summary>
         /// Updates the player dictionary info to contain all of the current players

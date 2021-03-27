@@ -88,6 +88,11 @@ namespace TwitchMod
                     ModManager.WriteToConsole("3 pressed");
                     ModManager.MurderPlayerDebug(3);
                 }
+                if (Input.GetKeyDown(KeyCode.Alpha7))
+                {
+                    ModManager.WriteToConsole("7 pressed");
+                    ModManager.KillRandomPlayer();
+                }
             }
         }
     }
