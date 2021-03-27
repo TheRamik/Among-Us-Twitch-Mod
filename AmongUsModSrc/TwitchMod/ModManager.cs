@@ -197,10 +197,22 @@ namespace TwitchMod
             }
 
             List<string> playerNames = getPlayerNames();
+            List<string> deadPlayerNames = new List<string>();
             playerNames.Shuffle();
+            //Swap all living players
             for(int i = 0; i < playerNames.Count - 1; i++)
             {
+                if (playerInfoDict[playerNames[i]].IsDead)
+                {
+                    deadPlayerNames.Add(playerNames[i]);
+                    continue;
+                }
                 SwapPlayerPositions(playerControlDict[playerNames[i]], playerControlDict[playerNames[i + 1]]);
+            }
+            //Swap all ghost players
+            for (int i = 0; i < deadPlayerNames.Count - 1; i++)
+            {
+                SwapPlayerPositions(playerControlDict[deadPlayerNames[i]], playerControlDict[deadPlayerNames[i + 1]]);
             }
             WriteToConsole("All players successfully swapped!");
         }
