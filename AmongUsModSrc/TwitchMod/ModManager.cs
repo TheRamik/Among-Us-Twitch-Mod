@@ -165,6 +165,7 @@ namespace TwitchMod
                         MurderRandomPlayer();
                         break;
                     case TwitchCommand.SwapPlayers:
+                        RandomlySwapAllPlayers();
                         break;
                     case TwitchCommand.KillNamedPlayer:
                         MurderPlayerByName(commandInfo.infoString);

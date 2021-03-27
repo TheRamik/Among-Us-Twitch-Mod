@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.IO.Pipes;
 
 namespace TwitchMod
@@ -33,17 +34,32 @@ namespace TwitchMod
                 // Display the read text to the console
                 while (true)
                 {
-                    string temp;
-                    while ((temp = await sr.ReadLineAsync()) != null)
+                    string message;
+                    while ((message = await sr.ReadLineAsync()) != null)
                     {
-                        System.Console.WriteLine("Received from server: {0}", temp);
-                        if (temp == "deeznuts")
+                        System.Console.WriteLine("Received from server: {0}", message);
+                        if (message.StartsWith("killplayer:"))
+                        {
+                            var optionNames = message.Split(':').ToList();
+                            optionNames.RemoveAt(0);
+                            var playerName = optionNames.First();
+                            ModManager.AddTwitchCommand(new TwitchCommandInfo(TwitchCommand.KillRandomPlayer, playerName));
+                            // sw.WriteLine("Player killed");
+                        }
+                        else if (message == "killrandomplayer")
                         {
                             ModManager.AddTwitchCommand(new TwitchCommandInfo(TwitchCommand.KillRandomPlayer));
-                            sw.Flush();
-                            pipeClient.WaitForPipeDrain();
-                            // await sw.WriteLineAsync("Player killed");
                         }
+                        else if (message == "swapplayers")
+                        {
+                            ModManager.AddTwitchCommand(new TwitchCommandInfo(TwitchCommand.SwapPlayers));
+                        }
+                        else
+                        {
+                            System.Console.WriteLine($"Failed to understand request: {message}");
+                        }
+                        sw.Flush();
+                        pipeClient.WaitForPipeDrain();
                     }
                 }
             }

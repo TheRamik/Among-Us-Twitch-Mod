@@ -71,12 +71,16 @@ namespace AUTwitchNetwork
 
         public static NamedPipeServerStream pipeServer;
         public static StreamWriter sw;
+        public static StreamReader sr;
         /// <summary>
         /// 
         /// </summary>
         public Dictionary<int, CustomReward> rewards;
 
+
+        public enum Rewards { KillPlayer, KillRandomPlayer, SwapPlayer };
         public string KillPlayerString = "Among Us: Kill Player";
+        public string KillRandomPlayerString = "Among Us: Kill a Random Player";
         public string SwapPlayersString = "Among Us: Swap Players";
 
 
@@ -134,35 +138,44 @@ namespace AUTwitchNetwork
             API.Settings.ClientId = clientId;
             API.Settings.Secret = secret;
 
-            var twitchRewards = await getCustomRewards();
+            var twitchRewards = await GetCustomRewards();
             for (int i = 0; i <= twitchRewards.Length - 1; i++)
             {
                 int rewardKey = -1;
                 if (twitchRewards[i].Title == KillPlayerString)
                 {
-                    rewardKey = 0;
+                    rewardKey = (int) Rewards.KillPlayer;
                 }
                 else if (twitchRewards[i].Title == SwapPlayersString)
                 {
-                    rewardKey = 1;
+                    rewardKey = (int) Rewards.KillRandomPlayer;
+                }
+                else if (twitchRewards[i].Title == KillRandomPlayerString)
+                {
+                    rewardKey = (int) Rewards.SwapPlayer;
                 }
                 if (rewardKey >= 0)
                 {
                     _logger.Information($"{rewardKey} for {twitchRewards[i].Title}");
-                    rewards.Add(rewardKey, await updateCustomReward(
+                    rewards.Add(rewardKey, await UpdateCustomReward(
                         twitchRewards[i].Id, twitchRewards[i].Prompt, true));
                 }
             }
 
             // if rewards isn't set up, add it
-            if (!rewards.ContainsKey(0))
+            if (!rewards.ContainsKey((int)Rewards.KillPlayer))
             {
-                rewards.Add(0, await createKillPlayerReward());
+                rewards.Add((int) Rewards.KillPlayer, await CreateKillPlayerReward());
             }
 
-            if (!rewards.ContainsKey(1))
+            if (!rewards.ContainsKey((int)Rewards.KillRandomPlayer))
             {
-                rewards.Add(1, await createSwapPlayersReward());
+                rewards.Add((int) Rewards.KillRandomPlayer, await CreateRandomKillPlayerReward());
+            }
+
+            if (!rewards.ContainsKey((int)Rewards.SwapPlayer))
+            {
+                rewards.Add((int)Rewards.SwapPlayer, await CreateSwapPlayersReward());
             }
 
             //Set up twitchlib pubsub
@@ -181,6 +194,7 @@ namespace AUTwitchNetwork
 
             pipeServer = new NamedPipeServerStream("testpipe", PipeDirection.InOut, 4);
             sw = new StreamWriter(pipeServer);
+            sr = new StreamReader(pipeServer);
             System.Console.WriteLine("NamedPipeServerStream object created.");
 
             // Wait for a client to connect
@@ -201,7 +215,7 @@ namespace AUTwitchNetwork
         /// https://dev.twitch.tv/docs/authentication#refreshing-access-tokens
         /// for more info.
         /// </summary>
-        public async Task refreshAccessToken()
+        public async Task RefreshAccessToken()
         {
             try
             {
@@ -221,7 +235,7 @@ namespace AUTwitchNetwork
         /// https://dev.twitch.tv/docs/api/reference#get-custom-reward
         /// for more info.
         /// </summary>
-        public async Task<CustomReward[]> getCustomRewards()
+        public async Task<CustomReward[]> GetCustomRewards()
         {
             try {
                 var response = await API.Helix.ChannelPoints.GetCustomReward(
@@ -231,8 +245,8 @@ namespace AUTwitchNetwork
             catch (InvalidCredentialException e)
             {
                 _logger.Information($"{e.Message}");
-                await refreshAccessToken();
-                return await getCustomRewards();
+                await RefreshAccessToken();
+                return await GetCustomRewards();
             }
         }
 
@@ -240,7 +254,7 @@ namespace AUTwitchNetwork
         /// Creates the Kill Player custom reward on the channel using
         /// the CreateCustomRewards API.
         /// </summary>
-        public Task<CustomReward> createKillPlayerReward()
+        public Task<CustomReward> CreateKillPlayerReward()
         {
             var killReward = new CreateCustomRewardsRequest();
             killReward.Title = KillPlayerString;
@@ -250,14 +264,31 @@ namespace AUTwitchNetwork
             killReward.IsUserInputRequired = true;
             killReward.IsGlobalCooldownEnabled = true;
             killReward.GlobalCooldownSeconds = 1000;
-            return createCustomReward(killReward);
+            return CreateCustomReward(killReward);
+        }
+
+        /// <summary>
+        /// Creates the Kill Player custom reward on the channel using
+        /// the CreateCustomRewards API.
+        /// </summary>
+        public Task<CustomReward> CreateRandomKillPlayerReward()
+        {
+            var randomKillReward = new CreateCustomRewardsRequest();
+            randomKillReward.Title = KillRandomPlayerString;
+            randomKillReward.Cost = 10000;
+            randomKillReward.Prompt = "Kills a Random Player ";
+            randomKillReward.IsEnabled = true;
+            randomKillReward.IsUserInputRequired = false;
+            randomKillReward.IsGlobalCooldownEnabled = true;
+            randomKillReward.GlobalCooldownSeconds = 1000;
+            return CreateCustomReward(randomKillReward);
         }
 
         /// <summary>
         /// Creates the Swap Players custom reward created on the channel using
         /// the CreateCustomRewards API.
         /// </summary>
-        public Task<CustomReward> createSwapPlayersReward()
+        public Task<CustomReward> CreateSwapPlayersReward()
         {
             var swapReward = new CreateCustomRewardsRequest();
             swapReward.Title = SwapPlayersString;
@@ -267,7 +298,7 @@ namespace AUTwitchNetwork
             swapReward.IsUserInputRequired = false;
             swapReward.IsGlobalCooldownEnabled = true;
             swapReward.GlobalCooldownSeconds = 1000;
-            return createCustomReward(swapReward);
+            return CreateCustomReward(swapReward);
         }
 
         /// <summary>
@@ -276,7 +307,7 @@ namespace AUTwitchNetwork
         /// https://dev.twitch.tv/docs/api/reference#create-custom-rewards
         /// for more info.
         /// </summary>
-        public async Task<CustomReward> createCustomReward(CreateCustomRewardsRequest reward)
+        public async Task<CustomReward> CreateCustomReward(CreateCustomRewardsRequest reward)
         {
             Console.WriteLine("Inside of createCustomReward");
             try
@@ -289,8 +320,8 @@ namespace AUTwitchNetwork
             catch (InvalidCredentialException e)
             {
                 _logger.Information($"{e.Message}");
-                await refreshAccessToken();
-                return await createCustomReward(reward);
+                await RefreshAccessToken();
+                return await CreateCustomReward(reward);
             }
             catch (BadRequestException e)
             {
@@ -305,7 +336,7 @@ namespace AUTwitchNetwork
         /// https://dev.twitch.tv/docs/api/reference#update-custom-reward
         /// for more info.
         /// </summary>
-        public async Task<CustomReward> updateCustomReward(string rewardId, string prompt, bool isEnabled = false)
+        public async Task<CustomReward> UpdateCustomReward(string rewardId, string prompt, bool isEnabled = false)
         {
             Console.WriteLine("Inside of updateCustomReward");
             try
@@ -321,8 +352,8 @@ namespace AUTwitchNetwork
             catch (InvalidCredentialException e)
             {
                 _logger.Information($"{e.Message}");
-                await refreshAccessToken();
-                return await updateCustomReward(rewardId, prompt, isEnabled);
+                await RefreshAccessToken();
+                return await UpdateCustomReward(rewardId, prompt, isEnabled);
             }
             catch (BadRequestException e)
             {
@@ -360,7 +391,7 @@ namespace AUTwitchNetwork
             _logger.Information($"{e.RewardTitle} (\"{e.RewardId}\")");
         }
 
-        private void PubSub_OnRewardRedeemed(object sender, OnRewardRedeemedArgs e)
+        private async void PubSub_OnRewardRedeemed(object sender, OnRewardRedeemedArgs e)
         {
             //Statuses can be:
             // "UNFULFILLED": when a user redeemed the reward
@@ -369,10 +400,8 @@ namespace AUTwitchNetwork
             {
                 _logger.Information($"{e.DisplayName} redeemed: {e.RewardTitle} " +
                     $"with prompt ${e.RewardPrompt.Split()}. With message: {e.Message}");
-                fulfillCustomReward(e);
-                API.Helix.ChannelPoints.UpdateCustomRewardRedemptionStatus(e.ChannelId, e.RewardId.ToString(),
-                    new List<string>() { e.RedemptionId.ToString() }, 
-                    new UpdateCustomRewardRedemptionStatusRequest() { Status = CustomRewardRedemptionStatus.CANCELED });
+                await FulfillCustomReward(e);
+                
             }
 
             if (e.Status == "FULFILLED")
@@ -381,46 +410,58 @@ namespace AUTwitchNetwork
             }
         }
 
-        private void fulfillCustomReward(OnRewardRedeemedArgs e)
+        private async Task FulfillCustomReward(OnRewardRedeemedArgs e)
         {
-            if (e.RewardTitle == "Among Us: Kill Player")
+            if (e.RewardTitle == KillPlayerString)
             {
                 if (isValidCustomReward(e.RewardPrompt, e.Message))
                 {
                     _logger.Information($"This is a valid kill. Sending over to Among Us Mod");
                     // TODO: Pipe the command over to the C# app
                     // If the pipe returns success, call UpdateCustomRewardRedemptionStatus with status fulfilled
-                    try
-                    {
-                        // Read user input and send that to the client process.
-                        sw.AutoFlush = true;
-                        System.Console.Write("Enter text: ");
-                        sw.WriteLine(Console.ReadLine());
-                        sw.WriteLine(Console.ReadLine());
-                        sw.WriteLine("deeznuts");
-                        pipeServer.WaitForPipeDrain();
-                    }
-                    // Catch the IOException that is raised if the pipe is broken
-                    // or disconnected.
-                    catch (IOException ex)
-                    {
-                        System.Console.WriteLine("ERROR: {0}", ex.Message);
-                    }
+                    SendToPipe("killplayer:" + e.RewardPrompt);
+                }
+                else
+                {
+                    _logger.Information($"This is not a valid kill. We are returning the points.");
+                    var response = await API.Helix.ChannelPoints.UpdateCustomRewardRedemptionStatus(e.ChannelId, e.RewardId.ToString(),
+                        new List<string>() { e.RedemptionId.ToString() },
+                        new UpdateCustomRewardRedemptionStatusRequest() { Status = CustomRewardRedemptionStatus.CANCELED },
+                        mySettings.twitch.token.userAccess);
+                    _logger.Information($"{response.Data[0]}");
                 }
             }
-            else if (e.RewardTitle == "Among Us: Swap Players")
+            else if (e.RewardTitle == KillRandomPlayerString)
+            {
+                _logger.Information($"Going to kill random player");
+                // TODO: Pipe the command over to the C# app
+                // If the pipe returns success, call UpdateCustomRewardRedemptionStatus with status fulfilled
+                SendToPipe("killrandomplayer");
+                var response = await API.Helix.ChannelPoints.UpdateCustomRewardRedemptionStatus(e.ChannelId, e.RewardId.ToString(),
+                        new List<string>() { e.RedemptionId.ToString() },
+                        new UpdateCustomRewardRedemptionStatusRequest() { Status = CustomRewardRedemptionStatus.FULFILLED },
+                        mySettings.twitch.token.userAccess);
+                _logger.Information($"{response.Data[0]}");
+            }
+            else if (e.RewardTitle == SwapPlayersString)
             {
                 _logger.Information($"Going to swap players");
                 // TODO: Pipe the command over to the C# app
                 // If the pipe returns success, call UpdateCustomRewardRedemptionStatus with status fulfilled
+                SendToPipe("swapplayers");
+                var response = await API.Helix.ChannelPoints.UpdateCustomRewardRedemptionStatus(e.ChannelId, e.RewardId.ToString(),
+                        new List<string>() { e.RedemptionId.ToString() },
+                        new UpdateCustomRewardRedemptionStatusRequest() { Status = CustomRewardRedemptionStatus.FULFILLED },
+                        mySettings.twitch.token.userAccess);
+                _logger.Information($"{response.Data[0]}");
             }
         }
 
         private bool isValidCustomReward(string rewardPrompt, string rewardMessage)
         {
-            bool isValid = true;
+            bool isValid = false;
             var prompt = rewardPrompt.Split('\n');
-            for(int i = 1; i <= prompt.Length - 1; i++)
+            for (int i = 1; i <= prompt.Length - 1; i++)
             {
                 _logger.Information($"{i}: {prompt[i]}");
                 if (prompt[i] == rewardMessage)
@@ -431,36 +472,23 @@ namespace AUTwitchNetwork
             return isValid;
         }
 
-        private async void server()
+        private void SendToPipe(string message)
         {
-            // var pipeServer = new NamedPipeServerStream("testpipe", PipeDirection.InOut, 4);
-
-            StreamReader sr = new StreamReader(pipeServer);
-            StreamWriter sw = new StreamWriter(pipeServer);
-
-            do
+            try
             {
-                try
-                {
-                    pipeServer.WaitForConnection();
-                    string test;
-                    sw.WriteLine("Waiting");
-                    sw.Flush();
-                    pipeServer.WaitForPipeDrain();
-                    test = await sr.ReadLineAsync();
-                    Console.WriteLine(test);
-                }
+                // Read user input and send that to the client process.
+                sw.AutoFlush = true;
+                sw.WriteLine(message);
+                pipeServer.WaitForPipeDrain();
+            }
+            // Catch the IOException that is raised if the pipe is broken
+            // or disconnected.
+            catch (IOException ex)
+            {
+                System.Console.WriteLine("ERROR: {0}", ex.Message);
+            }
 
-                catch (Exception ex) { throw ex; }
-
-                finally
-                {
-                    pipeServer.WaitForPipeDrain();
-                    // if (pipeServer.IsConnected) { pipeServer.Disconnect(); }
-                }
-            } while (true);
         }
-
     #endregion
 
     #region Pubsub events
