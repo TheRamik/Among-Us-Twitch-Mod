@@ -70,6 +70,7 @@ namespace AUTwitchNetwork
         public static ITwitchAPI API;
 
         public static NamedPipeServerStream pipeServer;
+        public static StreamWriter sw;
         /// <summary>
         /// 
         /// </summary>
@@ -178,7 +179,8 @@ namespace AUTwitchNetwork
             //Connect to pubsub
             PubSub.Connect();
 
-            pipeServer = new NamedPipeServerStream("testpipe", PipeDirection.Out);
+            pipeServer = new NamedPipeServerStream("testpipe", PipeDirection.InOut, 4);
+            sw = new StreamWriter(pipeServer);
             System.Console.WriteLine("NamedPipeServerStream object created.");
 
             // Wait for a client to connect
@@ -391,15 +393,12 @@ namespace AUTwitchNetwork
                     try
                     {
                         // Read user input and send that to the client process.
-                        using (StreamWriter sw = new StreamWriter(pipeServer))
-                        {
-                            sw.AutoFlush = true;
-                            System.Console.Write("Enter text: ");
-                            sw.WriteLine(Console.ReadLine());
-                            sw.WriteLine(Console.ReadLine());
-                            sw.WriteLine(Console.ReadLine());
-                            sw.WriteLine("deeznuts");
-                        }
+                        sw.AutoFlush = true;
+                        System.Console.Write("Enter text: ");
+                        sw.WriteLine(Console.ReadLine());
+                        sw.WriteLine(Console.ReadLine());
+                        sw.WriteLine("deeznuts");
+                        pipeServer.WaitForPipeDrain();
                     }
                     // Catch the IOException that is raised if the pipe is broken
                     // or disconnected.
@@ -432,11 +431,41 @@ namespace AUTwitchNetwork
             return isValid;
         }
 
-        #endregion
+        private async void server()
+        {
+            // var pipeServer = new NamedPipeServerStream("testpipe", PipeDirection.InOut, 4);
 
-        #region Pubsub events
+            StreamReader sr = new StreamReader(pipeServer);
+            StreamWriter sw = new StreamWriter(pipeServer);
 
-        private void OnPubSubServiceError(object sender, OnPubSubServiceErrorArgs e)
+            do
+            {
+                try
+                {
+                    pipeServer.WaitForConnection();
+                    string test;
+                    sw.WriteLine("Waiting");
+                    sw.Flush();
+                    pipeServer.WaitForPipeDrain();
+                    test = await sr.ReadLineAsync();
+                    Console.WriteLine(test);
+                }
+
+                catch (Exception ex) { throw ex; }
+
+                finally
+                {
+                    pipeServer.WaitForPipeDrain();
+                    // if (pipeServer.IsConnected) { pipeServer.Disconnect(); }
+                }
+            } while (true);
+        }
+
+    #endregion
+
+    #region Pubsub events
+
+    private void OnPubSubServiceError(object sender, OnPubSubServiceErrorArgs e)
         {
             _logger.Error($"{e.Exception.Message}");
         }
