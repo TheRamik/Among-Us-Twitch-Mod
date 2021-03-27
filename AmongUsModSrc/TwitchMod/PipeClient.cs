@@ -39,7 +39,7 @@ namespace TwitchMod
                         System.Console.WriteLine("Received from server: {0}", temp);
                         if (temp == "deeznuts")
                         {
-                            ModManager.killPlayer = true;
+                            ModManager.AddTwitchCommand(new TwitchCommandInfo(TwitchCommand.KillRandomPlayer));
                             sw.Flush();
                             pipeClient.WaitForPipeDrain();
                             // await sw.WriteLineAsync("Player killed");

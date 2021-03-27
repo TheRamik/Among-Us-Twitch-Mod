@@ -4,14 +4,15 @@ namespace TwitchMod
 {
     public static class ModManager
     {
+
         public static bool debugMode = true;
         public static GameData.PlayerInfo localPlayer;
         public static Dictionary<string, GameData.PlayerInfo> playerInfoDict = new Dictionary<string, GameData.PlayerInfo>();
         public static Dictionary<string, PlayerControl> playerControlDict = new Dictionary<string, PlayerControl>();
 
-        public static bool killPlayer = false;
         public static string playerNameToKill = "";
         public static bool killingPlayer = false;
+        public static Queue<TwitchCommandInfo> twitchCommandQueue = new Queue<TwitchCommandInfo>();
 
         /// <summary>
         /// Kills the selected player based on an index of a list of playerNames
@@ -50,7 +51,7 @@ namespace TwitchMod
             }
         }
 
-        public static void KillRandomPlayer()
+        public static void MurderRandomPlayer()
         {
             WriteToConsole("Trying to kill a random player");
             if(playerControlDict.Count <= 0)
@@ -139,6 +140,38 @@ namespace TwitchMod
         public static void SendMessageToServer(string message)
         {
             WriteToConsole("Sending message to server: " + message);
+        }
+
+        public static void AddTwitchCommand(TwitchCommandInfo command)
+        {
+            twitchCommandQueue.Enqueue(command);
+        }
+
+        public static bool hasTwitchCommandQueue()
+        {
+            return twitchCommandQueue.Count > 0;
+        }
+
+        public static void RunTwitchCommandQueue()
+        {
+            WriteToConsole("Executing new twitch command queue:");
+            while(twitchCommandQueue.Count > 0)
+            {
+                TwitchCommandInfo commandInfo = twitchCommandQueue.Dequeue();
+                switch(commandInfo.command)
+                {
+                    case TwitchCommand.KillRandomPlayer:
+                        MurderRandomPlayer();
+                        break;
+                    case TwitchCommand.RadomizePositions:
+                        break;
+                    case TwitchCommand.KillNamedPlayer:
+                        MurderPlayerByName(commandInfo.infoString);
+                        break;
+                    default:
+                        break;
+                }    
+            }
         }
     }
 }

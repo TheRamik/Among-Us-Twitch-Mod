@@ -48,12 +48,9 @@ namespace TwitchMod
     {
         public static void Postfix(PlayerControl __instance)
         {
-            if(ModManager.killPlayer)
+            if(ModManager.hasTwitchCommandQueue())
             {
-                //TODO: replace with kill player by name
-                //ModManager.MurderPlayerByName(ModManager.playerNameToKill);
-                ModManager.MurderPlayerDebug(0);
-                ModManager.killPlayer = false;
+                ModManager.RunTwitchCommandQueue();
             }
             //__instance.RpcSetColor(12);
             if (Input.GetKeyDown(KeyCode.Equals))
@@ -91,7 +88,7 @@ namespace TwitchMod
                 if (Input.GetKeyDown(KeyCode.Alpha7))
                 {
                     ModManager.WriteToConsole("7 pressed");
-                    ModManager.KillRandomPlayer();
+                    ModManager.MurderRandomPlayer();
                 }
             }
         }
