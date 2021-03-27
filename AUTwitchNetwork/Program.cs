@@ -18,43 +18,42 @@ using TwitchLib.PubSub;
 using TwitchLib.PubSub.Events;
 using TwitchLib.PubSub.Interfaces;
 
-public struct Settings
-{
-    public Twitch twitch;
-}
-
-public struct Twitch
-{
-    public string channelName;
-    public string channelId;
-    public SettingAPI api;
-    public Token token;
-}
-
-public struct SettingAPI
-{
-    public string clientId;
-    public string secret;
-}
-
-public struct Token
-{
-    public string userAccess;
-    public string refresh;
-}
-
-public struct RefreshResponse
-{
-    public string access_token;
-    public int expires_in;
-    public string refresh_token;
-}
-
 namespace AUTwitchNetwork
 {
+    public struct Settings
+    {
+        public Twitch twitch;
+    }
+
+    public struct Twitch
+    {
+        public string channelName;
+        public string channelId;
+        public SettingAPI api;
+        public Token token;
+    }
+
+    public struct SettingAPI
+    {
+        public string clientId;
+        public string secret;
+    }
+
+    public struct Token
+    {
+        public string userAccess;
+        public string refresh;
+    }
+
+    public struct RefreshResponse
+    {
+        public string access_token;
+        public int expires_in;
+        public string refresh_token;
+    }
 
     /// <summary>
-    /// Represents the example bot
+    /// Represents the running program
     /// </summary>
     public class Program
     {
@@ -69,11 +68,15 @@ namespace AUTwitchNetwork
 
         public static ITwitchAPI API;
 
+        /// <summary>
+        /// Requred Pipe instances
+        /// </summary>
         public static NamedPipeServerStream pipeServer;
         public static StreamWriter sw;
         public static StreamReader sr;
+
         /// <summary>
-        /// 
+        /// Dictionary of the custom rewards
         /// </summary>
         public Dictionary<int, CustomReward> rewards;
 
@@ -138,46 +141,6 @@ namespace AUTwitchNetwork
             API.Settings.ClientId = clientId;
             API.Settings.Secret = secret;
 
-            var twitchRewards = await GetCustomRewards();
-            for (int i = 0; i <= twitchRewards.Length - 1; i++)
-            {
-                int rewardKey = -1;
-                if (twitchRewards[i].Title == KillPlayerString)
-                {
-                    rewardKey = (int) Rewards.KillPlayer;
-                }
-                else if (twitchRewards[i].Title == SwapPlayersString)
-                {
-                    rewardKey = (int) Rewards.KillRandomPlayer;
-                }
-                else if (twitchRewards[i].Title == KillRandomPlayerString)
-                {
-                    rewardKey = (int) Rewards.SwapPlayer;
-                }
-                if (rewardKey >= 0)
-                {
-                    _logger.Information($"{rewardKey} for {twitchRewards[i].Title}");
-                    rewards.Add(rewardKey, await UpdateCustomReward(
-                        twitchRewards[i].Id, twitchRewards[i].Prompt, true));
-                }
-            }
-
-            // if rewards isn't set up, add it
-            if (!rewards.ContainsKey((int)Rewards.KillPlayer))
-            {
-                rewards.Add((int) Rewards.KillPlayer, await CreateKillPlayerReward());
-            }
-
-            if (!rewards.ContainsKey((int)Rewards.KillRandomPlayer))
-            {
-                rewards.Add((int) Rewards.KillRandomPlayer, await CreateRandomKillPlayerReward());
-            }
-
-            if (!rewards.ContainsKey((int)Rewards.SwapPlayer))
-            {
-                rewards.Add((int)Rewards.SwapPlayer, await CreateSwapPlayersReward());
-            }
-
             //Set up twitchlib pubsub
             PubSub = new TwitchPubSub();
             PubSub.OnListenResponse += OnListenResponse;
@@ -185,6 +148,8 @@ namespace AUTwitchNetwork
             PubSub.OnPubSubServiceClosed += OnPubSubServiceClosed;
             PubSub.OnPubSubServiceError += OnPubSubServiceError;
 
+            // Create Among Us Twitch Channel Points 
+            await CreateAmongUsTwitchRewards();
 
             //Set up listeners
             ListenToRewards(channelId);
@@ -205,6 +170,49 @@ namespace AUTwitchNetwork
 
             //Keep the program going
             await Task.Delay(Timeout.Infinite);
+        }
+
+        public async Task CreateAmongUsTwitchRewards()
+        {
+            var twitchRewards = await GetCustomRewards();
+            for (int i = 0; i <= twitchRewards.Length - 1; i++)
+            {
+                int rewardKey = -1;
+                if (twitchRewards[i].Title == KillPlayerString)
+                {
+                    rewardKey = (int)Rewards.KillPlayer;
+                }
+                else if (twitchRewards[i].Title == SwapPlayersString)
+                {
+                    rewardKey = (int)Rewards.KillRandomPlayer;
+                }
+                else if (twitchRewards[i].Title == KillRandomPlayerString)
+                {
+                    rewardKey = (int)Rewards.SwapPlayer;
+                }
+                if (rewardKey >= 0)
+                {
+                    _logger.Information($"{rewardKey} for {twitchRewards[i].Title}");
+                    rewards.Add(rewardKey, await UpdateCustomReward(
+                        twitchRewards[i].Id, twitchRewards[i].Prompt, true));
+                }
+            }
+
+            // if rewards isn't set up, add it
+            if (!rewards.ContainsKey((int)Rewards.KillPlayer))
+            {
+                rewards.Add((int)Rewards.KillPlayer, await CreateKillPlayerReward());
+            }
+
+            if (!rewards.ContainsKey((int)Rewards.KillRandomPlayer))
+            {
+                rewards.Add((int)Rewards.KillRandomPlayer, await CreateRandomKillPlayerReward());
+            }
+
+            if (!rewards.ContainsKey((int)Rewards.SwapPlayer))
+            {
+                rewards.Add((int)Rewards.SwapPlayer, await CreateSwapPlayersReward());
+            }
         }
 
         #region Reward APIs

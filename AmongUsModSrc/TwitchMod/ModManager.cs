@@ -202,7 +202,7 @@ namespace TwitchMod
             //Swap all living players
             for(int i = 0; i < playerNames.Count - 1; i++)
             {
-                if (playerInfoDict[playerNames[i]].IsDead)
+                if (playerInfoDict[playerNames[i]].IsDead || playerInfoDict[playerNames[i + 1]].IsDead)
                 {
                     //deadPlayerNames.Add(playerNames[i]);
                     continue;
