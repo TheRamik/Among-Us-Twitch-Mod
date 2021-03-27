@@ -6,7 +6,7 @@ namespace TwitchMod
     {
         KillNamedPlayer,
         KillRandomPlayer,
-        RadomizePositions
+        SwapPlayers
     }
 
     public struct TwitchCommandInfo

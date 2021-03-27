@@ -48,7 +48,7 @@ namespace TwitchMod
     {
         public static void Postfix(PlayerControl __instance)
         {
-            if(ModManager.hasTwitchCommandQueue())
+            if(ModManager.HasTwitchCommandQueue())
             {
                 ModManager.RunTwitchCommandQueue();
             }
@@ -89,6 +89,16 @@ namespace TwitchMod
                 {
                     ModManager.WriteToConsole("7 pressed");
                     ModManager.MurderRandomPlayer();
+                }
+                if (Input.GetKeyDown(KeyCode.Alpha8))
+                {
+                    ModManager.WriteToConsole("8 pressed");
+                    ModManager.PlayerSwapDebug();
+                }
+                if (Input.GetKeyDown(KeyCode.Alpha9))
+                {
+                    ModManager.WriteToConsole("9 pressed");
+                    ModManager.RandomlySwapAllPlayers();
                 }
             }
         }

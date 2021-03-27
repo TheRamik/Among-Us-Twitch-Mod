@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace TwitchMod
 {
@@ -147,7 +148,7 @@ namespace TwitchMod
             twitchCommandQueue.Enqueue(command);
         }
 
-        public static bool hasTwitchCommandQueue()
+        public static bool HasTwitchCommandQueue()
         {
             return twitchCommandQueue.Count > 0;
         }
@@ -163,7 +164,7 @@ namespace TwitchMod
                     case TwitchCommand.KillRandomPlayer:
                         MurderRandomPlayer();
                         break;
-                    case TwitchCommand.RadomizePositions:
+                    case TwitchCommand.SwapPlayers:
                         break;
                     case TwitchCommand.KillNamedPlayer:
                         MurderPlayerByName(commandInfo.infoString);
@@ -172,6 +173,46 @@ namespace TwitchMod
                         break;
                 }    
             }
+        }
+
+        public static void SwapPlayerPositions(PlayerControl player1, PlayerControl player2)
+        {
+            Vector2 originPos1 = player1.transform.position;
+            Vector2 originPos2 = player2.transform.position;
+
+            WriteToConsole("Attempting swap");
+            player1.NetTransform.RpcSnapTo(originPos2);
+            player2.NetTransform.RpcSnapTo(originPos1);
+            WriteToConsole("Swap successful");
+        }
+
+        public static void RandomlySwapAllPlayers()
+        {
+            WriteToConsole("Trying to randomly swap all players");
+            if (playerControlDict.Count <= 0)
+            {
+                WriteToConsole("Swap failed, no players detected");
+                return;
+            }
+
+            List<string> playerNames = getPlayerNames();
+            playerNames.Shuffle();
+            for(int i = 0; i < playerNames.Count - 1; i++)
+            {
+                SwapPlayerPositions(playerControlDict[playerNames[i]], playerControlDict[playerNames[i + 1]]);
+            }
+            WriteToConsole("All players successfully swapped!");
+        }
+
+        public static void PlayerSwapDebug()
+        {
+            if(playerControlDict.Count < 2)
+            {
+                WriteToConsole("Debug swap failed, less than 2 players");
+            }
+            List<string> playerNames = getPlayerNames();
+            WriteToConsole(string.Format("Swapping {0} and {1}", playerNames[0], playerNames[1]));
+            SwapPlayerPositions(playerControlDict[playerNames[0]], playerControlDict[playerNames[1]]);
         }
     }
 }
