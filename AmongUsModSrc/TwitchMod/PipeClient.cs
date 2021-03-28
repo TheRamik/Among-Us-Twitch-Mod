@@ -10,7 +10,7 @@ namespace TwitchMod
         public static async void Main()
         {
             using (NamedPipeClientStream pipeClient =
-                new NamedPipeClientStream(".", "testpipe", PipeDirection.InOut, PipeOptions.Asynchronous))
+                new NamedPipeClientStream(".", "AmongUsTwitchModPipe", PipeDirection.InOut, PipeOptions.Asynchronous))
             {
 
                 // Connect to the pipe or wait until the pipe is available.
