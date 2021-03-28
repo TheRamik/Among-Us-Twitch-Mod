@@ -75,6 +75,7 @@ namespace AmongUsTwitchNetwork
         /// <param name="args">Arguments</param>
         static void Main(string[] args)
         {
+            AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit);
             var outputTemplate = "[{Timestamp:HH:mm:ss} {Level}] {Message}{NewLine}{Exception}";
 
             _logger = new LoggerConfiguration()
@@ -107,7 +108,7 @@ namespace AmongUsTwitchNetwork
             }
             catch (BadScopeException e)
             {
-                Console.WriteLine($"Bad Scope returned from API. Please check your settings.json for accuate info or" +
+                Console.WriteLine($"Bad Scope returned from API. Please check your settings.json for accuate info or " +
                     $"ensure that you have the correct scopes generated with your access token.\n");
                 if (mySettings.verbose)
                 {
@@ -116,7 +117,7 @@ namespace AmongUsTwitchNetwork
             }
             catch (BadTokenException e)
             {
-                Console.WriteLine($"Bad Token returned from API. Please check your settings.json for accuate access token" +
+                Console.WriteLine($"Bad Token returned from API. Please check your settings.json for accuate access token " +
                     $"and refresh token.\n");
                 if (mySettings.verbose)
                 {
@@ -128,13 +129,20 @@ namespace AmongUsTwitchNetwork
                 if (mySettings.verbose)
                 {
                     Console.WriteLine($"Failed for unknown reason. Enable verbose mode in your settings.json for more info.");
-                    API.DisableAmongUsTwitchRewards();
+                    API.DisableAmongUsTwitchRewards().GetAwaiter().GetResult();
                     Console.WriteLine($" {e}");
                 }
             }
             Console.WriteLine("Press Enter to close the app....");
+            API.DisableAmongUsTwitchRewards().GetAwaiter().GetResult();
             Console.ReadLine();
 
+        }
+
+        static void OnProcessExit(object sender, EventArgs e)
+        {
+            Console.WriteLine("I'm out of here");
+            API.DisableAmongUsTwitchRewards().GetAwaiter().GetResult();
         }
 
         /// <summary>

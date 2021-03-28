@@ -68,7 +68,7 @@ namespace AmongUsTwitchNetwork
         /// Gets all the custom rewards and checks if they exist already. If it does,
         /// retrieve it and store it into a dictionary.
         /// </summary>
-        public async void DisableAmongUsTwitchRewards()
+        public async Task DisableAmongUsTwitchRewards()
         {
             for (int i = 0; i <= rewards.Count - 1; i++)
             {
@@ -200,7 +200,7 @@ namespace AmongUsTwitchNetwork
             var randomKillReward = new CreateCustomRewardsRequest();
             randomKillReward.Title = Constants.KillRandomPlayerString;
             randomKillReward.Cost = 1000;
-            randomKillReward.Prompt = "Kills a Random Player ";
+            randomKillReward.Prompt = "Kills a Random Player";
             randomKillReward.IsEnabled = true;
             randomKillReward.IsUserInputRequired = false;
             randomKillReward.IsGlobalCooldownEnabled = true;
@@ -216,7 +216,7 @@ namespace AmongUsTwitchNetwork
         {
             var swapReward = new CreateCustomRewardsRequest();
             swapReward.Title = Constants.SwapPlayersString;
-            swapReward.Cost = 1000;
+            swapReward.Cost = 500;
             swapReward.Prompt = "Swap players with each other randomly";
             swapReward.IsEnabled = true;
             swapReward.IsUserInputRequired = false;
