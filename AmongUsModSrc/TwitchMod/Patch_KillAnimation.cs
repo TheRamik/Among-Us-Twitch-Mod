@@ -5,7 +5,7 @@ namespace TwitchMod
     [HarmonyPatch(typeof(KillAnimation), nameof(KillAnimation.CoPerformKill))]
     public static class KillAnimation_CoPerformKillPatch
     {
-        public static void Prefix([HarmonyArgument(0)] PlayerControl source, [HarmonyArgument(0)] PlayerControl target)
+        public static void Prefix([HarmonyArgument(0)] PlayerControl source, [HarmonyArgument(1)] PlayerControl target)
         {
             //Since the animation started, the kill was successful
             if(ModManager.killingPlayer)
