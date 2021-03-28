@@ -7,6 +7,7 @@ namespace TwitchMod
     {
 
         public static bool debugMode = true;
+        public static bool gameStarted = false;
         public static GameData.PlayerInfo localPlayer;
         public static Dictionary<string, GameData.PlayerInfo> playerInfoDict = new Dictionary<string, GameData.PlayerInfo>();
         public static Dictionary<string, PlayerControl> playerControlDict = new Dictionary<string, PlayerControl>();
@@ -86,6 +87,11 @@ namespace TwitchMod
 
         private static void TwitchMurderPlayer(PlayerControl toKill)
         {
+            if (!gameStarted)
+            {
+                WriteToConsole("Kill stopped, game hasn't started yet.");
+                return;
+            }
             killingPlayer = true;
             toKill.RpcMurderPlayer(toKill);
         }
