@@ -54,7 +54,7 @@ Once unzipped, find the `Settings.json.example` file. Copy/rename `Settings.json
 in the appropriate fields.
 If you did not use Twitch CLI, the last thing you'd need is your channelId. Get the Chrome extension in `Settings.json`.
 Save the file and double-click `AmongUsTwitchNetwork.exe`. If all is working, you should see the following:
-![image](https://user-images.githubusercontent.com/19583901/112814125-cbb06900-9033-11eb-817e-c5d231f2911f.png)
+![image](https://user-images.githubusercontent.com/19583901/112816634-74f85e80-9036-11eb-81bf-fff6066bf000.png)
 
 
 ### Contribute/Development
