@@ -6,22 +6,15 @@ To make an application that uses the Twitch API, you first need to [register you
 After you register your application, store the client-id and secret somewhere. You will need it to get the program working.
 
 ### Prerequisite
-#### Generate a Token
-You can either generate a token using the [Twitch Token Generator](https://twitchtokengenerator.com/) website or Twitch CLI.
+#### Twitch Channel Points and Custom Rewards Requirement
+To Use [Twitch Channel Points](https://help.twitch.tv/s/article/channel-points-guide?language=en_US) and create [Twitch Custom Rewards](https://help.twitch.tv/s/article/making-the-most-of-channel-points?language=en_US#rightrewards), you must be a Twitch Affiliate or Twitch Partner.
 
-##### Twitch Token Generator
-When arriving to the site, a pop-up will appear at the top. Click on 'Custom Scope Token'.
-![image](https://user-images.githubusercontent.com/19583901/112807188-7ae94200-902c-11eb-9b46-bb8db63db9bf.png)
-
-Afterwards, scroll down to Helix section and choose 'Yes' on `channel:manage:redemptions`.
-![image](https://user-images.githubusercontent.com/19583901/112807540-e3382380-902c-11eb-8ef8-a361cc8ff041.png)
-
-Scroll near the bottom and you will see a generate token.
-At the top of the page, you will now see newly generated client-id, access token, and refresh token.
+#### Generate a Twitch OAuth Token
+You can generate a Twitch token using the Twitch CLI.
 
 ##### Twitch CLI
 ###### Install Twitch CLI
-Go to https://github.com/twitchdev/twitch-cli to show how to download twitch CLI with the Scoop or Homebrew
+Go to [TwitchCLI Github Repo](https://github.com/twitchdev/twitch-cli) to show how to download twitch CLI with the Scoop or Homebrew
 
 ###### Configure Twitch CLI
 Open a command prompt or terminal.
@@ -31,7 +24,7 @@ twitch configure --client-id <client-id> --client-secret <client-secret>
 ```
 For more info on [how to configure the Twitch CLI](https://github.com/twitchdev/twitch-cli/blob/main/docs/configure.md). 
 
-###### Generate the Token
+###### Generating the Token
 Now that your Twitch CLI is configured, you can easily generate your token with the following command:
 ```
 twitch token -u -s "channel:manage:redemptions"
