@@ -184,7 +184,7 @@ Project Link: [https://github.com/TheRamik/Among-Us-Twitch-Mod](https://github.c
 [stars-url]: https://github.com/TheRamik/Among-Us-Twitch-Mod/stargazers
 [issues-shield]: https://img.shields.io/github/issues/TheRamik/Among-Us-Twitch-Mod.svg?style=for-the-badge
 [issues-url]: https://github.com/TheRamik/Among-Us-Twitch-Mod/issues
-[license-shield]: https://img.shields.io/github/license/TheRamik/Among-Us-Twitch-Mod.svg?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/TheRamik/Among-Us-Twitch-Mod?style=for-the-badge
 [license-url]: https://github.com/TheRamik/Among-Us-Twitch-Mod/blob/master/LICENSE.txt
 <!-- [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/in/TheRamik -->
