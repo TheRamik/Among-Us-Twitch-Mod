@@ -102,7 +102,7 @@ Players will need to download the latest "AmongUsTwitchMod" zip folder found [he
 
 Once there, open up the Among Us game files/folder. If you have the game on Steam, the easiest way is to do this via the settings button for Among Us.
 
-<img src="images/SteamExample.png" alt="FileExample">
+<img src="images/FileExample.png" alt="FileExample">
 
 Inside here, unzip the contents of the zip folder. It should then look similar to what is shown above.
 
