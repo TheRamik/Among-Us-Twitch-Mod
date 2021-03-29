@@ -72,6 +72,8 @@ Double-click on the solution `AUTwitchNetwork.sln` and it should open up.
 #### NuGet Package Manager
 The next steps to get the program working is to install all the libraries. We are using the NuGet Package Manager to help us install all the packages we need. 
 Click on `Tools` on the top, then move your mouse to `NugetPackage Manager` and then click on `NuGet Package Manager Console` or `Manage Nuget Packages for Solution...`
+
+
 ![image](https://user-images.githubusercontent.com/19583901/112815428-28605380-9035-11eb-80ce-7c4ee847784e.png)
 
 
