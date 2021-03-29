@@ -38,22 +38,54 @@ twitch token -u -s "channel:manage:redemptions"
 ```
 ![image](https://user-images.githubusercontent.com/19583901/112809089-83db1300-902e-11eb-8ead-7639ecf8ca47.png)
 
+###### Retrieve your Channel Id
+Using Twitch CLI, you can run API commands. You'll need your channel id for the settings.json later.
+To get your channel id, run the following command:
+```
+twitch api get users -q login=<username>
+```
+![image](https://user-images.githubusercontent.com/19583901/112812899-7a53aa00-9032-11eb-94b1-9eb50945a206.png)
+
+### Installation 
+Streamers will need to download the latest "AmongUsTwitchNetwork" zip folder found [here.](https://github.com/TheRamik/Among-Us-Twitch-Mod/releases)
 
 #### Create a Settings.json
-Copy Settings.json.example and fill in the fields with the appropriate information
+Once unzipped, find the `Settings.json.example` file. Copy/rename `Settings.json.example` to `Settings.json` and fill in the fields with the appropriate information
+in the appropriate fields.
+If you did not use Twitch CLI, the last thing you'd need is your channelId. Get the Chrome extension in `Settings.json`.
+Save the file and double-click `AmongUsTwitchNetwork.exe`. If all is working, you should see the following:
+![image](https://user-images.githubusercontent.com/19583901/112814125-cbb06900-9033-11eb-817e-c5d231f2911f.png)
 
-## Installs
 
-### Install Visual Studio 2019/ Visual Studio Mac
-Go to 
+### Contribute/Development
 
-### Install TwitchLib
+#### Install Visual Studio 2019/ Visual Studio Mac
+Download and install [Microsoft Visual Studio](https://visualstudio.microsoft.com/downloads/)
+
+#### Visual Studio Environment
+After installing Visaul Studio, add the `ASP.NET and web development` component in the Workloads tab
+![image](https://user-images.githubusercontent.com/19583901/112814797-804a8a80-9034-11eb-898f-2d871fa18418.png)
+
+Ensure that you have the .Net Framework 4.7.2 installed.
+Double-click on the solution `AUTwitchNetwork.sln` and it should open up.
+
+#### NuGet Package Manager
+The next steps to get the program working is to install all the libraries. We are using the NuGet Package Manager to help us install all the packages we need. 
+Click on `Tools` on the top, then move your mouse to `NugetPackage Manager` and then click on `NuGet Package Manager Console` or `Manage Nuget Packages for Solution...`
+![image](https://user-images.githubusercontent.com/19583901/112815428-28605380-9035-11eb-80ce-7c4ee847784e.png)
+
+
+#### Install TwitchLib
+Either run the following command in the NuGet Package Manager console or search for TwitchLib in the `Browse` section from the `Nuget - Solution` tab.
 ``` 
 Install-Package TwitchLib
 ```
 
-### Install dependencies
+#### Install dependencies
+Install the rest of the dependencies the same way as we did for `TwitchLib`.
 ```
+Install-Package Serilog
+Install-Package Newtonsoft.Json
 Install-Package Microsoft.Extensions.Configuration.Json
 Install-Package Microsoft.Extensions.Configuration.Binder
 Install-Package Microsoft.Extensions.Configuration.EnvironmentVariables
