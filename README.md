@@ -167,6 +167,7 @@ Project Link: [https://github.com/TheRamik/Among-Us-Twitch-Mod](https://github.c
 * [Twitch](https://www.twitch.tv/) and the [2021 Twitch Channel Point Hackathon](https://twitchchannelpoints.devpost.com/) for driving us to make this
 * The [GTA V Chaos Mod]() which was a big source of inspiration for this mod
 * The Among Us modding community for helping us dive into the world of Among Us mods
+* [Best-README-Template](https://github.com/othneildrew/Best-README-Template) for readme/markdown guidance
 * All the people who made the [tools](#built-with) used in this project
 
 
