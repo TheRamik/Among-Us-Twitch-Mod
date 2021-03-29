@@ -95,10 +95,10 @@ Install-Package Microsoft.Extensions.Configuration.FileExtensions
 ```
 
 ### References:
-https://github.com/JayJay1989/TwitchLib.Pubsub.Example
-https://dev.twitch.tv/docs/authentication
-https://github.com/twitchdev/twitch-cli
-https://github.com/twitchdev/channel-points-node-sample
-https://dev.twitch.tv/docs/api/reference#update-custom-reward
-https://dev.twitch.tv/console
-https://dev.twitch.tv/docs/authentication#refreshing-access-tokens
+* https://github.com/JayJay1989/TwitchLib.Pubsub.Example
+* https://dev.twitch.tv/docs/authentication
+* https://github.com/twitchdev/twitch-cli
+* https://github.com/twitchdev/channel-points-node-sample
+* https://dev.twitch.tv/docs/api/reference#update-custom-reward
+* https://dev.twitch.tv/console
+* https://dev.twitch.tv/docs/authentication#refreshing-access-tokens
