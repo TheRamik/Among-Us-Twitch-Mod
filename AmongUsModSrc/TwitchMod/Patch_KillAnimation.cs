@@ -16,7 +16,7 @@ namespace TwitchMod
             //Check if this is a self kill, aka a twitch kill
             if (source == target)
             {
-                source.RpcSetColor(PlayerControl_MurderPlayerPatch.origColor);
+                source.RpcSetColor(PlayerControl_MurderPlayerPatch.rpcOrigColor);
             }
         }
     }

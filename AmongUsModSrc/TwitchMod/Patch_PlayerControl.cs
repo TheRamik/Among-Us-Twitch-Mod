@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using UnityEngine;
+using System;
 
 namespace TwitchMod
 {
@@ -8,7 +9,8 @@ namespace TwitchMod
     {
         public static bool wasImpostor;
         //Set to 0 to avoid potential nastiness with KillAnimation patch
-        public static byte origColor = 0;
+        public static int origColor = 0;
+        public static byte rpcOrigColor = 0;
 
         public static void Prefix(PlayerControl __instance, [HarmonyArgument(0)] PlayerControl target)
         {
@@ -18,6 +20,7 @@ namespace TwitchMod
                 //Save original impostor status
                 wasImpostor = __instance.Data.IsImpostor;
                 origColor = __instance.Data.ColorId;
+                rpcOrigColor = Convert.ToByte(origColor);
                 //Set the player to an impostor so they can kill themselves
                 __instance.Data.IsImpostor = true;
                 __instance.RpcSetColor(12);
@@ -31,7 +34,7 @@ namespace TwitchMod
             {
                 //Restore original color and impostor status
                 __instance.Data.IsImpostor = wasImpostor;
-                __instance.RpcSetColor(origColor);
+                __instance.RpcSetColor(rpcOrigColor);
             }
 
             //Check if the kill was successful
