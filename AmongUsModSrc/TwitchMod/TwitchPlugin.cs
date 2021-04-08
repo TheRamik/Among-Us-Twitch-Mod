@@ -34,7 +34,7 @@ namespace TwitchMod
             public static void Postfix(VersionShower __instance)
             {
                 string newString = __instance.text.Text;
-                newString += "\n\n\n\n\n\n\n[A86CF3FF]" + TwitchPlugin.Id + " 1.0.0[]";
+                newString += "\n\n\n\n\n\n\n[A86CF3FF]" + TwitchPlugin.Id + " 1.1.0[]";
                 __instance.text.Text = newString;
                 
             }
