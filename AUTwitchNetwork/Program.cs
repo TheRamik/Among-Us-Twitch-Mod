@@ -3,6 +3,7 @@ using System.IO;
 using System.IO.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 using Serilog;
 using TwitchLib.Api.Core.Enums;
@@ -157,10 +158,16 @@ namespace AmongUsTwitchNetwork
             var secret = mySettings.twitch.api.secret;
             var accessToken = mySettings.twitch.token.userAccess;
 
+            List<AuthScopes> authScopeList = new List<AuthScopes>();
+            authScopeList.Add(AuthScopes.Helix_Channel_Manage_Redemptions);
+
             // Set up twitchlib api
             API = new AmongUsTwitchAPI(mySettings);
             API.getAPI().Settings.ClientId = clientId;
-            API.getAPI().Settings.Secret = secret;
+            await API.AuthorizeTwitchAsync();
+            
+            API.getAPI().Settings.Scopes = authScopeList;
+            // API.getAPI().Settings.Secret = secret;
 
             //Set up twitchlib pubsub
             PubSub = new TwitchPubSub();

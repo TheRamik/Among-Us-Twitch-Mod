@@ -1,7 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Serilog;
 using System.Threading.Tasks;
+using System.Net.Http;
+using Windows.ApplicationModel.Resources;
+using Windows.Security.Authentication.Web;
+using Windows.UI.Core;
 using TwitchLib.Api;
 using TwitchLib.Api.Core.Enums;
 using TwitchLib.Api.Core.Exceptions;
@@ -19,9 +24,10 @@ namespace AmongUsTwitchNetwork
     {
         private static ILogger _logger;
         public static ITwitchAPI API;
+        protected HttpClient client;
         protected string channelId;
         protected string clientId;
-        protected string secret;
+        protected string redirectURI;
         protected string refreshToken;
         protected string accessToken;
 
@@ -32,6 +38,7 @@ namespace AmongUsTwitchNetwork
 
         public AmongUsTwitchAPI(Settings settings)
         {
+            client = new HttpClient();
             var outputTemplate = "[{Timestamp:HH:mm:ss} {Level}] {Message}{NewLine}{Exception}";
             _logger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
@@ -44,8 +51,8 @@ namespace AmongUsTwitchNetwork
             API = new TwitchAPI();
 
             this.channelId = settings.twitch.channelId;
-            this.clientId = settings.twitch.api.clientId;
-            this.secret = settings.twitch.api.secret;
+            this.clientId = "68nrjzl7gsxwkxhjf0bbyva2go57ty";
+            this.redirectURI = "https://theramik.github.io/Among-Us-Twitch-Mod/AUTwitchNetwork/";
             this.accessToken = settings.twitch.token.userAccess;
             this.refreshToken = settings.twitch.token.refresh;
         }
@@ -72,7 +79,7 @@ namespace AmongUsTwitchNetwork
         {
             for (int i = 0; i <= rewards.Count - 1; i++)
             {
-                await UpdateCustomReward(rewards[i].Id, rewards[i].Prompt, false);
+                await UpdateCustomRewardAsync(rewards[i].Id, rewards[i].Prompt, false);
             }
         }
 
@@ -82,7 +89,7 @@ namespace AmongUsTwitchNetwork
         /// </summary>
         public async Task CreateAmongUsTwitchRewards()
         {
-            var twitchRewards = await GetCustomRewards();
+            var twitchRewards = await GetCustomRewardsAsync();
             for (int i = 0; i <= twitchRewards.Length - 1; i++)
             {
                 int rewardKey = -1;
@@ -103,7 +110,7 @@ namespace AmongUsTwitchNetwork
                 if (rewardKey >= 0)
                 {
                     _logger.Information($"{rewardKey} for {twitchRewards[i].Title}");
-                    rewards.Add(rewardKey, await UpdateCustomReward(
+                    rewards.Add(rewardKey, await UpdateCustomRewardAsync(
                         twitchRewards[i].Id, twitchRewards[i].Prompt, enableReward));
                 }
             }
@@ -125,19 +132,70 @@ namespace AmongUsTwitchNetwork
             }
         }
 
+        public async Task<string> AuthorizeTwitchAsync()
+        {
+            try
+            {
+                var uri = "https://id.twitch.tv/oauth2/authorize";
+                uri += "?client_id=" + clientId;
+                uri += "&redirect_uri=" + redirectURI;
+                uri += "&response_type=token";
+                uri += "&scope=channel:manage:redemptions";
+                var endUri = new Uri(redirectURI);
+                WebAuthenticationResult WebAuthenticationResult = await WebAuthenticationBroker.AuthenticateAsync(WebAuthenticationOptions.None, uri, endUri);
+                // var content = new StringContent("application/x-www-form-urlencoded");
+                // var request = new HttpRequestMessage(new HttpMethod("GET"), uri);
+                Process.Start(uri);
+                // List<AuthScopes> authScopeList = new List<AuthScopes>();
+                // authScopeList.Add(AuthScopes.Helix_Channel_Manage_Redemptions);
+                // var response = API.V5.Auth.GetAuthorizationCodeUrl(redirectURI, authScopeList, true, null, clientId);
+                // var response = await client.SendAsync(request);
+                // _logger.Information("response:" + response);
+                /*
+                var response = await client.PostAsync(uri, content);
+                if (response != null)
+                {
+                    var results = await responseJsonToObject<RefreshResponse>(response.Content);
+                    mySettings.twitch.token.userAccess = results.access_token;
+                }
+                var response = await API.V5.Auth.GetAccessTokenFromCodeAsync(
+                    this.refreshToken, this.secret, this.clientId);
+                this.accessToken = response.AccessToken;
+                */
+                _logger.Information("request");
+                return "finished";
+            }
+            catch (Exception e)
+            {
+                _logger.Error($"{e.Message}");
+                throw e;
+            }
+            // public Task<AuthCodeResponse> GetAccessTokenFromCodeAsync(string code, string clientSecret, string redirectUri, string clientId = null);
+        }
+
+        /// <summary>
+        /// Converts the JSON from the HttpContent to a object based on the
+        /// object type we pass in.
+        /// </summary>
+        // private async Task<T> responseJsonToObject<T>(HttpContent content)
+        // {
+        //     var jsonString = await content.ReadAsStringAsync();
+        //     return JsonConvert.DeserializeObject<T>(jsonString);
+        // }
+
         /// <summary>
         /// Refreshes the token when the user access token expires. Updates the
         /// access token and the settings.json. See the Twitch documentation at
         /// https://dev.twitch.tv/docs/authentication#refreshing-access-tokens
         /// for more info.
         /// </summary>
-        public async Task<string> RefreshAccessToken()
+        public async Task<string> RefreshAccessTokenAsync()
         {
             try
             {
-                var response = await API.V5.Auth.RefreshAuthTokenAsync(
-                    this.refreshToken, this.secret, this.clientId);
-                this.accessToken = response.AccessToken;
+                // var response = await API.V5.Auth.RefreshAuthTokenAsync(
+                //     this.refreshToken, this.secret, this.clientId);
+                // this.accessToken = response.AccessToken;
             }
             catch (Exception e)
             {
@@ -153,7 +211,7 @@ namespace AmongUsTwitchNetwork
         /// https://dev.twitch.tv/docs/api/reference#get-custom-reward
         /// for more info.
         /// </summary>
-        public async Task<CustomReward[]> GetCustomRewards()
+        public async Task<CustomReward[]> GetCustomRewardsAsync()
         {
             try
             {
@@ -164,8 +222,8 @@ namespace AmongUsTwitchNetwork
             catch (InvalidCredentialException e)
             {
                 _logger.Error($"{e.Message}");
-                await RefreshAccessToken();
-                return await GetCustomRewards();
+                await RefreshAccessTokenAsync();
+                return await GetCustomRewardsAsync();
             }
             catch (Exception e)
             {
@@ -243,7 +301,7 @@ namespace AmongUsTwitchNetwork
             catch (InvalidCredentialException e)
             {
                 _logger.Information($"{e.Message}");
-                await RefreshAccessToken();
+                await RefreshAccessTokenAsync();
                 return await CreateCustomReward(reward);
             }
             catch (Exception e)
@@ -259,7 +317,7 @@ namespace AmongUsTwitchNetwork
         /// https://dev.twitch.tv/docs/api/reference#update-custom-reward
         /// for more info.
         /// </summary>
-        public async Task<CustomReward> UpdateCustomReward(string rewardId, string prompt, bool isEnabled = false)
+        public async Task<CustomReward> UpdateCustomRewardAsync(string rewardId, string prompt, bool isEnabled = false)
         {
             try
             {
@@ -274,8 +332,8 @@ namespace AmongUsTwitchNetwork
             catch (InvalidCredentialException e)
             {
                 _logger.Information($"{e.Message}");
-                await RefreshAccessToken();
-                return await UpdateCustomReward(rewardId, prompt, isEnabled);
+                await RefreshAccessTokenAsync();
+                return await UpdateCustomRewardAsync(rewardId, prompt, isEnabled);
             }
             catch (Exception e)
             {
@@ -298,7 +356,7 @@ namespace AmongUsTwitchNetwork
             catch (InvalidCredentialException e)
             {
                 _logger.Information($"{e.Message}");
-                await RefreshAccessToken();
+                await RefreshAccessTokenAsync();
                 return await UpdateRedemptionReward(events, status);
             }
             catch (Exception e)
