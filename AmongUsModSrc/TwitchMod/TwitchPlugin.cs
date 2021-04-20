@@ -4,6 +4,7 @@ using BepInEx.IL2CPP;
 using HarmonyLib;
 using Reactor;
 using UnityEngine;
+using System;
 
 namespace TwitchMod
 {
@@ -27,15 +28,15 @@ namespace TwitchMod
             Harmony.PatchAll();
         }
 
-        [HarmonyPriority(Priority.Low)] // to show this message last
         [HarmonyPatch(typeof(VersionShower), nameof(VersionShower.Start))]
         public static class VersionShower_StartPatch
         {
             public static void Postfix(VersionShower __instance)
             {
-                string newString = __instance.text.Text;
-                newString += "\n\n\n\n\n\n\n[A86CF3FF]" + TwitchPlugin.Id + " 1.1.0[]";
-                __instance.text.Text = newString;
+                string newString = __instance.text.text;
+                newString += "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"+ TwitchPlugin.Id + " 1.1.1";
+                __instance.text.text = newString;
+                __instance.text.color = new Color32(Convert.ToByte(168), Convert.ToByte(108), Convert.ToByte(243), Convert.ToByte(255));
                 
             }
         }
